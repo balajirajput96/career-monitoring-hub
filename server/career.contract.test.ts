@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { buildApprovalNotice, extractSessionToken, isScheduleAlreadyActive, profileInputSchema, sourceInputSchema } from "./routers/career";
+import { buildApprovalNotice, extractSessionToken, isScheduleAlreadyActive, mapScheduleMutationError, profileInputSchema, sourceInputSchema } from "./routers/career";
 import { approvalIsReviewOnly, buildCoverNotePrompt, resolveReportLanguage, shouldRecordDailyReport } from "./careerWorkflow";
 import { buildResumeContext, isDuplicateApplicationSubmission } from "./careerStore";
 
@@ -13,6 +13,13 @@ describe("workflow safety contracts", () => {
   it("passes only the decoded app session cookie to heartbeat mutations", () => {
     expect(extractSessionToken("app_session_id=jwt-token; other=value")).toBe("jwt-token");
     expect(() => extractSessionToken(undefined)).toThrow("Sign in again");
+  });
+
+  it("maps heartbeat ownership 403s without pretending the schedule was paused", () => {
+    const mapped = mapScheduleMutationError(new Error("Heartbeat UpdateHeartbeatJob failed (403) permission_denied"));
+    expect(mapped?.code).toBe("FORBIDDEN");
+    expect(mapped?.message).toContain("different session");
+    expect(mapScheduleMutationError(new Error("network timeout"))).toBeNull();
   });
 
   it("records reports only for completed, warning, or skipped outcomes", () => {

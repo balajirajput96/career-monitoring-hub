@@ -37,6 +37,17 @@ const languageSchema = z.enum(["en", "hi"]);
 export function isScheduleAlreadyActive(schedule: { isEnabled: boolean; scheduleCronTaskUid: string | null }) {
   return schedule.isEnabled && Boolean(schedule.scheduleCronTaskUid);
 }
+
+export function mapScheduleMutationError(error: unknown): TRPCError | null {
+  const message = error instanceof Error ? error.message : String(error);
+  if (/403|permission_denied|forbidden/i.test(message)) {
+    return new TRPCError({
+      code: "FORBIDDEN",
+      message: "This schedule is owned by a different session. Re-activate it from the signed-in published dashboard before changing its state.",
+    });
+  }
+  return null;
+}
 const sourceTypeSchema = z.enum(["greenhouse", "lever"]);
 const statusSchema = z.enum(["found", "shortlisted", "approval_pending", "applied", "rejected", "follow_up", "closed"]);
 
@@ -255,7 +266,13 @@ export const careerRouter = router({
       const schedule = await getOrCreateSchedule(ctx.user.id);
       if (schedule.scheduleCronTaskUid) {
         const token = extractSessionToken(ctx.req.headers.cookie);
-        await updateHeartbeatJob(schedule.scheduleCronTaskUid, { enable: false }, token);
+        try {
+          await updateHeartbeatJob(schedule.scheduleCronTaskUid, { enable: false }, token);
+        } catch (error) {
+          const mapped = mapScheduleMutationError(error);
+          if (mapped) throw mapped;
+          throw error;
+        }
       }
       return updateSchedule(ctx.user.id, { isEnabled: false });
     }),
