@@ -1,4 +1,4 @@
-import { and, desc, eq, inArray, sql } from "drizzle-orm";
+import { and, desc, eq, inArray, or, sql } from "drizzle-orm";
 import {
   applications,
   approvalRequests,
@@ -8,6 +8,7 @@ import {
   jobMatches,
   jobSources,
   recruiterContacts,
+  recruiterEmailEvents,
   workflowRuns,
   workflowSchedules,
 } from "../drizzle/schema";
@@ -195,6 +196,93 @@ export async function updateRecruiterContact(userId: number, contactId: number, 
   const db = await requireCareerDb();
   await db.update(recruiterContacts).set(values).where(and(eq(recruiterContacts.id, contactId), eq(recruiterContacts.userId, userId)));
   return (await db.select().from(recruiterContacts).where(and(eq(recruiterContacts.id, contactId), eq(recruiterContacts.userId, userId))).limit(1))[0];
+}
+
+export function normalizeRecruiterSender(sender: string) {
+  return sender.match(/<([^>]+)>/)?.[1]?.trim().toLowerCase() ?? sender.trim().toLowerCase();
+}
+
+export function isLikelyRecruiterResponse(subject: string) {
+  return /interview|application|candidate|recruit|assessment|next steps|thank you/i.test(subject);
+}
+
+export function dedupeRecruiterEmailInputs(items: RecruiterEmailInput[]) {
+  const seen = new Set<string>();
+  return items.filter(item => {
+    if (seen.has(item.messageId)) return false;
+    seen.add(item.messageId);
+    return true;
+  });
+}
+
+export function resolveRecruiterContactId(
+  sender: string,
+  threadId: string | null | undefined,
+  contacts: Array<{ id: number; email?: string | null }>,
+  priorEvents: Array<{ threadId?: string | null; matchedContactId?: number | null }>,
+) {
+  const senderEmail = normalizeRecruiterSender(sender);
+  const bySender = contacts.find(contact => contact.email?.toLowerCase() === senderEmail);
+  if (bySender) return bySender.id;
+  const prior = threadId ? priorEvents.find(event => event.threadId === threadId && event.matchedContactId) : undefined;
+  return prior?.matchedContactId ?? null;
+}
+
+export type RecruiterEmailInput = {
+  messageId: string;
+  threadId?: string | null;
+  sender: string;
+  subject: string;
+  receivedAt?: Date | null;
+  snippet?: string | null;
+};
+
+export async function listRecruiterEmailEvents(userId: number) {
+  const db = await requireCareerDb();
+  return db.select().from(recruiterEmailEvents).where(eq(recruiterEmailEvents.userId, userId)).orderBy(desc(recruiterEmailEvents.createdAt)).limit(100);
+}
+
+export async function reviewRecruiterEmailEvent(userId: number, eventId: number, reviewStatus: "reviewed" | "ignored") {
+  const db = await requireCareerDb();
+  await db.update(recruiterEmailEvents).set({ reviewStatus }).where(and(eq(recruiterEmailEvents.id, eventId), eq(recruiterEmailEvents.userId, userId)));
+  return (await db.select().from(recruiterEmailEvents).where(and(eq(recruiterEmailEvents.id, eventId), eq(recruiterEmailEvents.userId, userId))).limit(1))[0];
+}
+
+export async function ingestRecruiterEmailEvents(userId: number, items: RecruiterEmailInput[]) {
+  const db = await requireCareerDb();
+  const contacts = await listRecruiterContacts(userId);
+  const results = [];
+  for (const item of dedupeRecruiterEmailInputs(items)) {
+    const senderEmail = normalizeRecruiterSender(item.sender);
+    const senderContact = contacts.find(candidate => candidate.email?.toLowerCase() === senderEmail);
+    const threadEvent = item.threadId
+      ? (await db.select({ matchedContactId: recruiterEmailEvents.matchedContactId }).from(recruiterEmailEvents).where(and(eq(recruiterEmailEvents.userId, userId), eq(recruiterEmailEvents.threadId, item.threadId))).limit(1))[0]
+      : undefined;
+    const threadContact = threadEvent?.matchedContactId ? contacts.find(candidate => candidate.id === threadEvent.matchedContactId) : undefined;
+    const contact = senderContact ?? threadContact;
+    const existing = (await db.select().from(recruiterEmailEvents).where(and(eq(recruiterEmailEvents.userId, userId), eq(recruiterEmailEvents.messageId, item.messageId))).limit(1))[0];
+    if (existing) {
+      results.push(existing);
+      continue;
+    }
+    const inserted = await db.insert(recruiterEmailEvents).values({
+      userId,
+      messageId: item.messageId,
+      threadId: item.threadId ?? null,
+      sender: item.sender,
+      subject: item.subject,
+      receivedAt: item.receivedAt ?? null,
+      snippet: item.snippet ?? null,
+      matchedContactId: contact?.id ?? null,
+      reviewStatus: "unreviewed",
+    });
+    const event = (await db.select().from(recruiterEmailEvents).where(eq(recruiterEmailEvents.id, Number(inserted[0].insertId))).limit(1))[0]!;
+    if (contact) {
+      await db.update(recruiterContacts).set({ responseStatus: "replied", lastContactAt: item.receivedAt ?? new Date() }).where(and(eq(recruiterContacts.id, contact.id), eq(recruiterContacts.userId, userId)));
+    }
+    results.push(event);
+  }
+  return results;
 }
 
 export async function updateApplication(

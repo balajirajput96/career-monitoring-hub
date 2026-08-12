@@ -226,6 +226,27 @@ export const recruiterContacts = mysqlTable(
   table => [index("recruiterContacts_user_status_idx").on(table.userId, table.responseStatus)]
 );
 
+export const recruiterEmailEvents = mysqlTable(
+  "recruiterEmailEvents",
+  {
+    id: int("id").autoincrement().primaryKey(),
+    userId: int("userId").notNull(),
+    messageId: varchar("messageId", { length: 255 }).notNull(),
+    threadId: varchar("threadId", { length: 255 }),
+    sender: varchar("sender", { length: 320 }).notNull(),
+    subject: varchar("subject", { length: 500 }).notNull(),
+    receivedAt: timestamp("receivedAt"),
+    snippet: text("snippet"),
+    matchedContactId: int("matchedContactId"),
+    reviewStatus: varchar("reviewStatus", { length: 32 }).notNull().default("unreviewed"),
+    createdAt: timestamp("createdAt").defaultNow().notNull(),
+  },
+  table => [
+    uniqueIndex("recruiterEmailEvents_user_message_unique").on(table.userId, table.messageId),
+    index("recruiterEmailEvents_user_review_idx").on(table.userId, table.reviewStatus),
+  ]
+);
+
 export const approvalRequests = mysqlTable(
   "approvalRequests",
   {

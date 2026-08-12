@@ -44,3 +44,16 @@
 - [x] Add an explicit test for the existing-task activateSchedule router path with mocked Heartbeat ownership/session outcomes.
 - [x] Add an explicit test for pauseSchedule on an existing persisted task, including mocked 403 handling and non-destructive TRPC behavior.
 - [x] Add a direct router-level pauseSchedule test where Heartbeat 403 remains unrecoverable, asserting the intended non-destructive TRPC error and unchanged persisted schedule state.
+
+- [ ] Validate the first scheduled discovery run, including bilingual English/Hindi report generation, threshold behavior, and persisted run results.
+- [x] Add privacy-preserving recruiter-response email ingestion with read-only access, sender/thread matching, deduplication, and manual-review status updates only.
+- [x] Research and add additional legitimate public Greenhouse/Lever sources for Pharmaceutical QA and AI/Python/Automation tracks, with source verification and tests.
+
+- [ ] Integrate a real read-only Gmail ingestion path into the app/scheduler using protected mailbox reads and persistent recruiter events.
+- [x] Add thread-based recruiter matching/reconciliation and protected manual review-status updates.
+- [x] Add regression tests for recruiter email deduplication, sender normalization, thread handling, matched-contact updates, and review-only behavior.
+- [x] Add source-specific automated tests for Legend Biotech and Remote public feed acceptance and deterministic eligibility limitations.
+- [x] Add recruiter email ingestion regression tests covering duplicate messageId handling, thread-based contact reconciliation, matched-contact responseStatus updates, and protected reviewEmailEvent mutation behavior.
+- [x] Add an end-to-end or mocked-store ingestion regression test asserting matched-contact responseStatus updates during recruiter email ingest.
+- [x] Add a router-level protected test for contacts.reviewEmailEvent covering signed-in success and unauthenticated rejection.
+- [x] Add a recruiter email ingestion regression test that exercises ingestRecruiterEmailEvents with a matched contact and explicitly asserts the recruiter's responseStatus is updated as intended during ingest.

@@ -20,6 +20,9 @@ import {
   getProfile,
   listApplications,
   listRecruiterContacts,
+  listRecruiterEmailEvents,
+  ingestRecruiterEmailEvents,
+  reviewRecruiterEmailEvent,
   addRecruiterContact,
   updateRecruiterContact,
   listApprovals,
@@ -195,6 +198,21 @@ export const careerRouter = router({
   }),
   contacts: router({
     list: protectedProcedure.query(({ ctx }) => listRecruiterContacts(ctx.user.id)),
+    emailEvents: protectedProcedure.query(({ ctx }) => listRecruiterEmailEvents(ctx.user.id)),
+    reviewEmailEvent: protectedProcedure.input(z.object({
+      eventId: z.number().int().positive(),
+      reviewStatus: z.enum(["reviewed", "ignored"]),
+    })).mutation(({ ctx, input }) => reviewRecruiterEmailEvent(ctx.user.id, input.eventId, input.reviewStatus)),
+    ingestEmailEvents: protectedProcedure.input(z.object({
+      events: z.array(z.object({
+        messageId: z.string().trim().min(1).max(255),
+        threadId: z.string().trim().max(255).optional(),
+        sender: z.string().email().max(320),
+        subject: z.string().trim().min(1).max(500),
+        receivedAt: z.coerce.date().optional(),
+        snippet: z.string().trim().max(5_000).optional(),
+      })).max(100),
+    })).mutation(async ({ ctx, input }) => ingestRecruiterEmailEvents(ctx.user.id, input.events)),
     add: protectedProcedure.input(z.object({
       applicationId: z.number().int().positive().optional(),
       jobId: z.number().int().positive().optional(),
