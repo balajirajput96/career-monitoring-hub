@@ -37,4 +37,13 @@ describe("career profile resume metadata", () => {
 
     expect(result.success).toBe(false);
   });
+
+  it("rejects storage metadata outside the owner-scoped career-resumes namespace", () => {
+    const result = profileInputSchema.safeParse({
+      ...baseProfile,
+      resumeVersions: [{ name: "resume.pdf", storageKey: "other-user/resume.pdf", url: "/manus-storage/other-user/resume.pdf" }],
+    });
+
+    expect(result.success).toBe(false);
+  });
 });

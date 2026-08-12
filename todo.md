@@ -11,11 +11,11 @@
 - [x] Implement a configurable daily 09:00 IST default scheduled workflow that discovers, verifies, scores, deduplicates, records, and reports without a manual trigger after production activation.
 - [x] Add verified recruiter-response and operational-blocker owner notifications while retaining signal-only delivery.
 - [x] Add run logs, error handling, recovery state, and source-verification labels for scheduled-work reliability.
-- [ ] Add automated tests for approval gates, report eligibility, and scheduled-work safety in addition to scoring, deduplication, and resume-storage coverage.
+- [x] Add automated tests for approval gates, report eligibility, and scheduled-work safety in addition to scoring, deduplication, and resume-storage coverage.
 - [x] Verify the responsive UI and scheduled-work configuration, then create a deployment-ready checkpoint.
 - [x] Import and verify career profile details from the user-provided Google Doc, including Diploma in Biotechnology and two years of Quality Officer/QA experience.
 - [x] Apply the verified Google Doc profile details to scoring, preferred roles, resume context, and bilingual report settings without inventing missing facts.
-- [ ] Confirm a legitimate public job-feed source before activating recurring discovery for the configured tracks.
+- [x] Confirm a legitimate public job-feed source before activating recurring discovery for the configured tracks.
 
 ---
 
@@ -29,3 +29,5 @@
 - [x] Document verified facts as the resume-context source of truth until a dedicated resume-context feature is implemented.
 - [x] Wire bilingual daily reporting to the intended profile/report language setting and cover the language path with tests.
 - [x] Ensure verified profile facts are available to resume-context and scoring features without inventing employment history.
+- [x] Add explicit automated tests for resume upload/storage validation, owned resume selection, metadata persistence, and rejection of invalid or unowned references.
+- [x] Add explicit automated tests for general job deduplication behavior, separate from repeated application-submission blocking.

@@ -41,6 +41,13 @@ const resumeVersionSchema = z.object({
   notes: z.string().trim().max(500).optional(),
   url: z.string().startsWith("/manus-storage/").optional(),
   storageKey: z.string().trim().min(1).max(600).optional(),
+}).superRefine((resume, refinement) => {
+  if (resume.storageKey && !resume.storageKey.startsWith("career-resumes/")) {
+    refinement.addIssue({ code: z.ZodIssueCode.custom, path: ["storageKey"], message: "Resume storage must use the career-resumes namespace." });
+  }
+  if (resume.storageKey && resume.url && !resume.url.endsWith(resume.storageKey)) {
+    refinement.addIssue({ code: z.ZodIssueCode.custom, path: ["url"], message: "Resume URL must match its storage key." });
+  }
 });
 
 export const profileInputSchema = z.object({
@@ -77,6 +84,13 @@ export const sourceInputSchema = z.object({
     refinement.addIssue({ code: z.ZodIssueCode.custom, path: ["endpointUrl"], message: "Use a public HTTPS Greenhouse boards JSON endpoint or Lever postings JSON endpoint." });
   }
 });
+
+export function buildApprovalNotice(actionType: "application_submit" | "message_send" | "post_publish", job: { title: string; company: string }) {
+  return {
+    title: "Manual approval required",
+    content: `${actionType.replaceAll("_", " ")} requested for ${job.title} at ${job.company}. No external action has been executed.`,
+  };
+}
 
 function requireSessionToken(header: string | undefined) {
   const token = parseCookie(header ?? "")[COOKIE_NAME] ?? "";
@@ -203,7 +217,7 @@ export const careerRouter = router({
         sourceUrl: job.sourceUrl,
       });
       await updateApplication(ctx.user.id, input.jobId, { status: "approval_pending" });
-      await notifyOwner({ title: "Manual approval required", content: `${input.actionType.replaceAll("_", " ")} requested for ${job.title} at ${job.company}. No external action has been executed.` });
+      await notifyOwner(buildApprovalNotice(input.actionType, job));
       return approval;
     }),
     decide: protectedProcedure.input(z.object({ approvalId: z.number().int().positive(), decision: z.enum(["approved", "declined"]) })).mutation(({ ctx, input }) => decideApproval(ctx.user.id, input.approvalId, input.decision)),

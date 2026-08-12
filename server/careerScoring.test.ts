@@ -54,6 +54,8 @@ describe("career scoring", () => {
 
   it("generates a stable, source-scoped key for deduplication", () => {
     expect(stableExternalKey(17, "  job-401  ")).toBe("17:job-401");
+    expect(stableExternalKey(17, "job-401")).toBe(stableExternalKey(17, "job-401"));
     expect(stableExternalKey(17, "job-401")).not.toBe(stableExternalKey(18, "job-401"));
+    expect(stableExternalKey(17, "job-401")).not.toBe(stableExternalKey(17, "job-402"));
   });
 });

@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { profileInputSchema, sourceInputSchema } from "./routers/career";
+import { buildApprovalNotice, profileInputSchema, sourceInputSchema } from "./routers/career";
 import { approvalIsReviewOnly, buildCoverNotePrompt, resolveReportLanguage, shouldRecordDailyReport } from "./careerWorkflow";
 import { buildResumeContext, isDuplicateApplicationSubmission } from "./careerStore";
 
@@ -13,6 +13,9 @@ describe("workflow safety contracts", () => {
 
   it("keeps approval actions review-only until a separate guarded executor exists", () => {
     expect(approvalIsReviewOnly()).toBe(true);
+    const notice = buildApprovalNotice("message_send", { title: "QA role", company: "Example Pharma" });
+    expect(notice.content).toContain("No external action has been executed");
+    expect(notice.content).toContain("message send requested");
   });
 
   it("blocks repeated applied submissions for the same persisted application", () => {
