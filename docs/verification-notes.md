@@ -54,3 +54,17 @@ The recruiter event model now supports sender normalization, thread-based reconc
 A remaining deployment-boundary item is the actual recurring Gmail connector-to-app transport. The local Gmail MCP read-only smoke test authenticated successfully and returned zero candidate threads, but the deployed web app cannot directly invoke an MCP server. Until an approved webhook/API transport is configured, Gmail ingestion remains an explicit protected import procedure rather than an automatic scheduled mailbox sync. No email was sent or modified.
 
 The final mocked-store ingestion regression now exercises `ingestRecruiterEmailEvents` with a matched verified recruiter and asserts the contact is updated to `responseStatus: replied` while the email event remains `reviewStatus: unreviewed`. The protected router test also confirms signed-in review success and unauthenticated rejection. The suite now passes 10 files and 42 tests.
+
+The user-provided n8n workspace URL `https://n8n-latest-xddq.onrender.com/home/workflows` was opened on 12 Aug 2026. The host returned Render's application-loading page and showed cold-start messages (service waking, allocating compute, preparing instance, starting instance, environment variables injected, finalizing startup). The n8n workflows UI and authentication state were not yet available during this observation; no workflow was created or modified.
+
+At 14:42:46 local session time on 12 Aug 2026, the specified Render n8n workspace still served Render's application-loading interstitial. The visible startup log progressed through waking, allocating resources, preparing instance, starting instance, and injecting environment variables, but no n8n login form or workflows UI was exposed. Source URL: https://n8n-latest-xddq.onrender.com/home/workflows
+
+Additional monitoring at 14:43:54 local session time: the user-provided Render n8n URL again showed Render's application-loading interstitial after a refresh. Startup log reached incoming request and service waking, but the n8n login page/workflows UI was still unavailable; no takeover was requested.
+
+Activation redirect fix verified at 15:15:57 local session time on 12 Aug 2026. The user-provided email link originally redirected to localhost:5678, but replacing only the host with the public Render n8n URL opened `/settings/usage` successfully. The page reported: “You’re on the Community Edition”, “Registered”, and “License activated — Your Registered Community Edition has been successfully activated.” No credentials were exposed or bypassed.
+
+## OAuth-free manual recruiter-email importer — 12 Aug 2026
+
+An OAuth-free manual recruiter-email importer was added to the signed-in Career Hub dashboard. It accepts a stable message ID, sender, subject, optional thread ID, received time, and optional snippet; it then reuses the protected event-ingestion contract for normalization, deduplication, contact matching, and manual-review-only persistence. The review queue shows an explicit load-error/retry state and permits only `reviewed` or `ignored` outcomes; it never sends an email or performs an external action.
+
+Vitest now discovers server and client tests. The complete suite passed with 13 test files and 49 tests, including actual rendered Home-component interaction tests for importer submission payloads and review-control restrictions. TypeScript validation also passed. Automatic Gmail polling remains dependent on a user-authorized Gmail credential in self-hosted n8n; no Google password, 2FA, or OAuth secret was handled by the agent.

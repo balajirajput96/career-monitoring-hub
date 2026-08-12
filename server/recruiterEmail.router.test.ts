@@ -52,9 +52,9 @@ describe("recruiter email review router", () => {
   it("keeps matched contact status changes in the ingest contract and never executes an external action", async () => {
     ingestRecruiterEmailEvents.mockResolvedValue([{ id: 4, matchedContactId: 7, reviewStatus: "unreviewed" }]);
     const result = await appRouter.createCaller(signedInContext()).career.contacts.ingestEmailEvents({
-      events: [{ messageId: "m-4", threadId: "t-4", sender: "recruiter@example.com", subject: "Interview next steps" }],
+      events: [{ messageId: "m-4", threadId: "t-4", sender: "recruiter@example.com", subject: "Interview next steps", receivedAt: "2026-08-12T09:00:00.000Z", snippet: "Please choose a time for a quality assurance interview." }],
     });
-    expect(ingestRecruiterEmailEvents).toHaveBeenCalledWith(user.id, expect.arrayContaining([expect.objectContaining({ messageId: "m-4", threadId: "t-4" })]));
+    expect(ingestRecruiterEmailEvents).toHaveBeenCalledWith(user.id, expect.arrayContaining([expect.objectContaining({ messageId: "m-4", threadId: "t-4", sender: "recruiter@example.com", receivedAt: expect.any(Date), snippet: "Please choose a time for a quality assurance interview." })]));
     expect(result[0]).toMatchObject({ matchedContactId: 7, reviewStatus: "unreviewed" });
   });
 });

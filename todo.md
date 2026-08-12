@@ -57,3 +57,20 @@
 - [x] Add an end-to-end or mocked-store ingestion regression test asserting matched-contact responseStatus updates during recruiter email ingest.
 - [x] Add a router-level protected test for contacts.reviewEmailEvent covering signed-in success and unauthenticated rejection.
 - [x] Add a recruiter email ingestion regression test that exercises ingestRecruiterEmailEvents with a matched contact and explicitly asserts the recruiter's responseStatus is updated as intended during ingest.
+
+- [ ] Add an approved n8n read-only Gmail-to-Career-Hub transport with authenticated webhook delivery and no send/draft capability.
+- [ ] Verify the n8n sync end to end with deduplicated recruiter events, thread/contact matching, and manual-review-only state.
+- [x] Fix the n8n activation-link localhost redirect by using the public Render usage route and verify Community Edition activation.
+
+- [ ] Add a signed server-to-server recruiter-email webhook contract so n8n can ingest events without a browser session or credential bypass.
+- [ ] Configure and test the webhook shared secret for the Career Hub deployment and n8n workflow.
+
+- [x] Add a dashboard form to manually import a recruiter email with sender, subject, received time, message ID, optional thread ID, and snippet.
+- [x] Display imported recruiter email events in the dashboard and allow only reviewed or ignored status changes.
+- [x] Add regression coverage for importer input normalization, mutation payloads, and manual-review-only outcomes.
+- [x] Add an explicit recruiter-email review queue error state for failed event loading.
+- [x] Add UI-focused manual importer normalization tests for trimming, optional fields, datetime conversion, and review action restrictions.
+- [x] Ensure manual importer normalization tests are included in the Vitest run and record their passing output.
+- [x] Add a dashboard-level importer test for form serialization/mutation payload construction and reviewed/ignored-only options.
+- [x] Add a rendered Home dashboard importer test that submits normalized email data to the contacts.ingestEmailEvents mutation.
+- [x] Add a rendered Home review-control test that exposes only reviewed and ignored as actionable status options.
