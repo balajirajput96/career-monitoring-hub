@@ -33,6 +33,10 @@ import {
 
 const trackSchema = z.enum(["pharma_qa", "ai_automation"]);
 const languageSchema = z.enum(["en", "hi"]);
+
+export function isScheduleAlreadyActive(schedule: { isEnabled: boolean; scheduleCronTaskUid: string | null }) {
+  return schedule.isEnabled && Boolean(schedule.scheduleCronTaskUid);
+}
 const sourceTypeSchema = z.enum(["greenhouse", "lever"]);
 const statusSchema = z.enum(["found", "shortlisted", "approval_pending", "applied", "rejected", "follow_up", "closed"]);
 
@@ -92,7 +96,7 @@ export function buildApprovalNotice(actionType: "application_submit" | "message_
   };
 }
 
-function requireSessionToken(header: string | undefined) {
+export function extractSessionToken(header: string | undefined) {
   const token = parseCookie(header ?? "")[COOKIE_NAME] ?? "";
   if (!token) throw new TRPCError({ code: "UNAUTHORIZED", message: "Sign in again before configuring the schedule." });
   return token;
@@ -233,7 +237,10 @@ export const careerRouter = router({
     activate: protectedProcedure.mutation(async ({ ctx }) => {
       if (process.env.NODE_ENV !== "production") throw new TRPCError({ code: "PRECONDITION_FAILED", message: "Deploy the project before activating a recurring schedule." });
       const schedule = await getOrCreateSchedule(ctx.user.id);
-      const token = requireSessionToken(ctx.req.headers.cookie);
+      // Activation is idempotent. A previously created platform task is already live;
+      // do not re-issue an update through a different session owner and surface a 403.
+      if (isScheduleAlreadyActive(schedule)) return schedule;
+      const token = extractSessionToken(ctx.req.headers.cookie);
       const jobName = `career-monitor-${ctx.user.id}`;
       let taskUid = schedule.scheduleCronTaskUid;
       if (taskUid) {
@@ -247,7 +254,7 @@ export const careerRouter = router({
     pause: protectedProcedure.mutation(async ({ ctx }) => {
       const schedule = await getOrCreateSchedule(ctx.user.id);
       if (schedule.scheduleCronTaskUid) {
-        const token = requireSessionToken(ctx.req.headers.cookie);
+        const token = extractSessionToken(ctx.req.headers.cookie);
         await updateHeartbeatJob(schedule.scheduleCronTaskUid, { enable: false }, token);
       }
       return updateSchedule(ctx.user.id, { isEnabled: false });
@@ -255,7 +262,7 @@ export const careerRouter = router({
     remove: protectedProcedure.mutation(async ({ ctx }) => {
       const schedule = await getOrCreateSchedule(ctx.user.id);
       if (schedule.scheduleCronTaskUid) {
-        const token = requireSessionToken(ctx.req.headers.cookie);
+        const token = extractSessionToken(ctx.req.headers.cookie);
         await deleteHeartbeatJob(schedule.scheduleCronTaskUid, token);
       }
       return updateSchedule(ctx.user.id, { scheduleCronTaskUid: null, isEnabled: false });

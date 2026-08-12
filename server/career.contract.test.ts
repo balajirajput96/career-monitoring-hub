@@ -1,9 +1,20 @@
 import { describe, expect, it } from "vitest";
-import { buildApprovalNotice, profileInputSchema, sourceInputSchema } from "./routers/career";
+import { buildApprovalNotice, extractSessionToken, isScheduleAlreadyActive, profileInputSchema, sourceInputSchema } from "./routers/career";
 import { approvalIsReviewOnly, buildCoverNotePrompt, resolveReportLanguage, shouldRecordDailyReport } from "./careerWorkflow";
 import { buildResumeContext, isDuplicateApplicationSubmission } from "./careerStore";
 
 describe("workflow safety contracts", () => {
+  it("treats an enabled persisted heartbeat task as idempotently active", () => {
+    expect(isScheduleAlreadyActive({ isEnabled: true, scheduleCronTaskUid: "task-1" })).toBe(true);
+    expect(isScheduleAlreadyActive({ isEnabled: false, scheduleCronTaskUid: "task-1" })).toBe(false);
+    expect(isScheduleAlreadyActive({ isEnabled: true, scheduleCronTaskUid: null })).toBe(false);
+  });
+
+  it("passes only the decoded app session cookie to heartbeat mutations", () => {
+    expect(extractSessionToken("app_session_id=jwt-token; other=value")).toBe("jwt-token");
+    expect(() => extractSessionToken(undefined)).toThrow("Sign in again");
+  });
+
   it("records reports only for completed, warning, or skipped outcomes", () => {
     expect(shouldRecordDailyReport("completed")).toBe(true);
     expect(shouldRecordDailyReport("completed_with_warnings")).toBe(true);

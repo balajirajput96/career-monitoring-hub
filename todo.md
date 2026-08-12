@@ -31,3 +31,10 @@
 - [x] Ensure verified profile facts are available to resume-context and scoring features without inventing employment history.
 - [x] Add explicit automated tests for resume upload/storage validation, owned resume selection, metadata persistence, and rejection of invalid or unowned references.
 - [x] Add explicit automated tests for general job deduplication behavior, separate from repeated application-submission blocking.
+- [ ] Resolve live recurring-schedule activation guard: platform registry shows an enabled 09:00 IST task, but the published activation attempt surfaced `Heartbeat UpdateHeartbeatJob failed (403) permission_denied`; clean activation/update behavior is not yet verified.
+- [ ] Investigate and fix the live schedule activation permission issue so Activate/Pause does not surface a 403 on the published site.
+- [ ] Add a regression test or documented verification for existing-task re-enable/update using the correct user session token.
+- [ ] Re-verify the published dashboard after the fix: clean activation, scheduled next run, and no error toast.
+- [ ] Resolve cron task ownership mismatch between the published app user and the platform owner, without creating duplicate active jobs.
+- [ ] Cover activate and pause behavior for an existing task with a mocked ownership/session policy, including 403 handling.
+- [ ] Re-verify the published dashboard after the ownership fix and confirm no activation or pause error toast.
