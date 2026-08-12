@@ -21,15 +21,17 @@ import {
 } from "@/components/ui/sidebar";
 import { startLogin } from "@/const";
 import { useIsMobile } from "@/hooks/useMobile";
-import { LayoutDashboard, LogOut, PanelLeft, Users } from "lucide-react";
+import { BriefcaseBusiness, ClipboardCheck, LayoutDashboard, LogOut, PanelLeft, UserRound } from "lucide-react";
 import { CSSProperties, useEffect, useRef, useState } from "react";
 import { useLocation } from "wouter";
 import { DashboardLayoutSkeleton } from './DashboardLayoutSkeleton';
 import { Button } from "./ui/button";
 
 const menuItems = [
-  { icon: LayoutDashboard, label: "Page 1", path: "/" },
-  { icon: Users, label: "Page 2", path: "/some-path" },
+  { icon: LayoutDashboard, label: "Command center", path: "/#overview" },
+  { icon: BriefcaseBusiness, label: "Opportunities", path: "/#opportunities" },
+  { icon: ClipboardCheck, label: "Approvals", path: "/#approvals" },
+  { icon: UserRound, label: "Career profile", path: "/#profile" },
 ];
 
 const SIDEBAR_WIDTH_KEY = "sidebar-width";
@@ -58,23 +60,22 @@ export default function DashboardLayout({
 
   if (!user) {
     return (
-      <div className="flex items-center justify-center min-h-screen">
-        <div className="flex flex-col items-center gap-8 p-8 max-w-md w-full">
-          <div className="flex flex-col items-center gap-6">
-            <h1 className="text-2xl font-semibold tracking-tight text-center">
-              Sign in to continue
-            </h1>
-            <p className="text-sm text-muted-foreground text-center max-w-sm">
-              Access to this dashboard requires authentication. Continue to launch the login flow.
-            </p>
+      <div className="relative grid min-h-screen place-items-center overflow-hidden bg-[#0b1620] px-5 py-10 text-white">
+        <div className="absolute inset-0 bg-[radial-gradient(circle_at_15%_20%,rgba(45,212,191,0.18),transparent_30%),radial-gradient(circle_at_80%_85%,rgba(56,189,248,0.14),transparent_34%)]" />
+        <div className="relative w-full max-w-lg rounded-[2rem] border border-white/10 bg-white/[0.06] p-8 shadow-2xl shadow-black/30 backdrop-blur-xl sm:p-10">
+          <div className="mb-10 flex items-center gap-3">
+            <div className="grid h-11 w-11 place-items-center rounded-2xl bg-emerald-300 text-sm font-black tracking-tight text-slate-950">CS</div>
+            <div><p className="text-sm font-semibold tracking-tight">Career Signal</p><p className="text-xs text-slate-300">Intelligent monitoring hub</p></div>
           </div>
-          <Button
-            onClick={() => startLogin()}
-            size="lg"
-            className="w-full shadow-lg hover:shadow-xl transition-all"
-          >
-            Sign in
+          <div className="max-w-md">
+            <p className="text-xs font-semibold uppercase tracking-[0.2em] text-emerald-300">Private workspace</p>
+            <h1 className="mt-3 text-3xl font-semibold tracking-tight sm:text-4xl">A calmer way to run a focused job search.</h1>
+            <p className="mt-4 text-sm leading-6 text-slate-300">Monitor verified roles, review clear match evidence, and keep the final decision for every external action.</p>
+          </div>
+          <Button onClick={() => startLogin()} size="lg" className="mt-9 w-full bg-emerald-300 font-semibold text-slate-950 shadow-lg shadow-emerald-500/10 transition-all hover:bg-emerald-200">
+            Sign in to your workspace
           </Button>
+          <p className="mt-4 text-center text-xs text-slate-400">Only meaningful alerts. Nothing is submitted automatically.</p>
         </div>
       </div>
     );
@@ -106,11 +107,12 @@ function DashboardLayoutContent({
 }: DashboardLayoutContentProps) {
   const { user, logout } = useAuth();
   const [location, setLocation] = useLocation();
+  const [activeAnchor, setActiveAnchor] = useState("overview");
   const { state, toggleSidebar } = useSidebar();
   const isCollapsed = state === "collapsed";
   const [isResizing, setIsResizing] = useState(false);
   const sidebarRef = useRef<HTMLDivElement>(null);
-  const activeMenuItem = menuItems.find(item => item.path === location);
+  const activeMenuItem = menuItems.find(item => item.path.endsWith(activeAnchor));
   const isMobile = useIsMobile();
 
   useEffect(() => {
@@ -168,9 +170,8 @@ function DashboardLayoutContent({
               </button>
               {!isCollapsed ? (
                 <div className="flex items-center gap-2 min-w-0">
-                  <span className="font-semibold tracking-tight truncate">
-                    Navigation
-                  </span>
+                  <span className="grid h-7 w-7 shrink-0 place-items-center rounded-lg bg-slate-900 text-[10px] font-black tracking-tight text-emerald-300">CS</span>
+                  <div className="min-w-0"><p className="truncate text-sm font-semibold tracking-tight text-slate-900">Career Signal</p><p className="truncate text-[10px] font-medium uppercase tracking-[0.13em] text-slate-400">Monitoring hub</p></div>
                 </div>
               ) : null}
             </div>
@@ -179,12 +180,21 @@ function DashboardLayoutContent({
           <SidebarContent className="gap-0">
             <SidebarMenu className="px-2 py-1">
               {menuItems.map(item => {
-                const isActive = location === item.path;
+                const anchor = item.path.split("#")[1] ?? "";
+                const isActive = activeAnchor === anchor;
                 return (
                   <SidebarMenuItem key={item.path}>
                     <SidebarMenuButton
                       isActive={isActive}
-                      onClick={() => setLocation(item.path)}
+                      onClick={() => {
+                        const anchor = item.path.split("#")[1];
+                        if (anchor) {
+                          setActiveAnchor(anchor);
+                          document.getElementById(anchor)?.scrollIntoView({ behavior: "smooth", block: "start" });
+                        } else {
+                          setLocation(item.path);
+                        }
+                      }}
                       tooltip={item.label}
                       className={`h-10 transition-all font-normal`}
                     >
@@ -255,7 +265,7 @@ function DashboardLayoutContent({
             </div>
           </div>
         )}
-        <main className="flex-1 p-4">{children}</main>
+        <main className="flex-1 p-5 sm:p-6 lg:p-8">{children}</main>
       </SidebarInset>
     </>
   );
