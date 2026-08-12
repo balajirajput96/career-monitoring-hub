@@ -77,6 +77,32 @@ export async function updateLinkedSchedule(
     return updater(taskUid, patch, "");
   }
 }
+
+export async function pauseLinkedSchedule(
+  taskUid: string,
+  sessionToken: string,
+  updater: typeof updateHeartbeatJob = updateHeartbeatJob,
+  deleter: typeof deleteHeartbeatJob = deleteHeartbeatJob,
+) {
+  try {
+    await updateLinkedSchedule(taskUid, { enable: false }, sessionToken, updater);
+    return { mode: "paused" as const };
+  } catch (error) {
+    // If both the browser session and project-owner retry cannot mutate this
+    // exact persisted task, deletion is the only safe stop operation. It prevents
+    // the remote cron from continuing while allowing Reactivate to create a new
+    // task. Never delete a caller-supplied UID; this UID came from the DB row.
+    if (!isSchedulePermissionError(error)) throw error;
+    try {
+      await deleter(taskUid, "");
+      return { mode: "deleted" as const };
+    } catch (deleteError) {
+      const mapped = mapScheduleMutationError(deleteError);
+      if (mapped) throw mapped;
+      throw deleteError;
+    }
+  }
+}
 const sourceTypeSchema = z.enum(["greenhouse", "lever"]);
 const statusSchema = z.enum(["found", "shortlisted", "approval_pending", "applied", "rejected", "follow_up", "closed"]);
 
@@ -297,13 +323,11 @@ export const careerRouter = router({
       const plan = getScheduleMutationPlan("pause", schedule);
       if (plan.kind === "update") {
         const token = extractSessionToken(ctx.req.headers.cookie);
-        try {
-          await updateLinkedSchedule(plan.taskUid, { enable: false }, token);
-        } catch (error) {
-          const mapped = mapScheduleMutationError(error);
-          if (mapped) throw mapped;
-          throw error;
-        }
+        const pauseResult = await pauseLinkedSchedule(plan.taskUid, token);
+        return updateSchedule(ctx.user.id, {
+          scheduleCronTaskUid: pauseResult.mode === "deleted" ? null : plan.taskUid,
+          isEnabled: false,
+        });
       }
       return updateSchedule(ctx.user.id, { isEnabled: false });
     }),

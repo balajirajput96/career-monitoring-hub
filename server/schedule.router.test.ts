@@ -3,6 +3,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 const getOrCreateSchedule = vi.fn();
 const updateSchedule = vi.fn();
 const updateHeartbeatJob = vi.fn();
+const deleteHeartbeatJob = vi.fn();
 const createHeartbeatJob = vi.fn();
 
 afterEach(() => {
@@ -16,7 +17,7 @@ vi.mock("./careerStore", async importOriginal => {
 
 vi.mock("./_core/heartbeat", async importOriginal => {
   const actual = await importOriginal<typeof import("./_core/heartbeat")>();
-  return { ...actual, updateHeartbeatJob, createHeartbeatJob };
+  return { ...actual, updateHeartbeatJob, deleteHeartbeatJob, createHeartbeatJob };
 });
 
 const { appRouter } = await import("./routers");
@@ -72,7 +73,7 @@ describe("schedule router existing-task mutations", () => {
     expect(result).toEqual({ scheduleCronTaskUid: "task-existing", isEnabled: true });
   });
 
-  it("returns a non-destructive TRPC error when an existing task remains owned by another session", async () => {
+  it("deletes and clears an existing task when both update identities return 403", async () => {
     getOrCreateSchedule.mockResolvedValue({
       id: 1,
       userId: user.id,
@@ -84,10 +85,32 @@ describe("schedule router existing-task mutations", () => {
       isEnabled: true,
     });
     updateHeartbeatJob.mockRejectedValue(new Error("Heartbeat UpdateHeartbeatJob failed (403) permission_denied"));
+    deleteHeartbeatJob.mockResolvedValue(undefined);
+    updateSchedule.mockResolvedValue({ scheduleCronTaskUid: null, isEnabled: false });
+
+    const result = await appRouter.createCaller(createContext()).career.schedule.pause();
+
+    expect(deleteHeartbeatJob).toHaveBeenCalledWith("task-existing", "");
+    expect(updateSchedule).toHaveBeenCalledWith(user.id, { scheduleCronTaskUid: null, isEnabled: false });
+    expect(result).toEqual({ scheduleCronTaskUid: null, isEnabled: false });
+  });
+
+  it("preserves the non-destructive TRPC error when delete also cannot manage the task", async () => {
+    getOrCreateSchedule.mockResolvedValue({
+      id: 1,
+      userId: user.id,
+      cronExpression: "0 30 3 * * *",
+      timezone: "Asia/Kolkata",
+      language: "en",
+      highPriorityThreshold: 80,
+      scheduleCronTaskUid: "task-existing",
+      isEnabled: true,
+    });
+    updateHeartbeatJob.mockRejectedValue(new Error("Heartbeat UpdateHeartbeatJob failed (403) permission_denied"));
+    deleteHeartbeatJob.mockRejectedValue(new Error("Heartbeat DeleteHeartbeatJob failed (403) permission_denied"));
 
     await expect(appRouter.createCaller(createContext()).career.schedule.pause()).rejects.toMatchObject({
       code: "FORBIDDEN",
-      message: expect.stringContaining("different session"),
     });
     expect(updateSchedule).not.toHaveBeenCalled();
   });
@@ -114,7 +137,7 @@ describe("schedule router existing-task mutations", () => {
       ["task-existing", { enable: false }, "browser-session"],
       ["task-existing", { enable: false }, ""],
     ]);
-    expect(updateSchedule).toHaveBeenCalledWith(user.id, { isEnabled: false });
+    expect(updateSchedule).toHaveBeenCalledWith(user.id, { scheduleCronTaskUid: "task-existing", isEnabled: false });
     expect(result).toEqual({ scheduleCronTaskUid: "task-existing", isEnabled: false });
   });
 });
