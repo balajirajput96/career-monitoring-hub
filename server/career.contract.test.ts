@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { buildApprovalNotice, extractSessionToken, isScheduleAlreadyActive, mapScheduleMutationError, profileInputSchema, sourceInputSchema } from "./routers/career";
+import { buildApprovalNotice, extractSessionToken, getScheduleMutationPlan, isScheduleAlreadyActive, mapScheduleMutationError, profileInputSchema, sourceInputSchema, updateLinkedSchedule } from "./routers/career";
 import { approvalIsReviewOnly, buildCoverNotePrompt, resolveReportLanguage, shouldRecordDailyReport } from "./careerWorkflow";
 import { buildResumeContext, isDuplicateApplicationSubmission } from "./careerStore";
 
@@ -20,6 +20,30 @@ describe("workflow safety contracts", () => {
     expect(mapped?.code).toBe("FORBIDDEN");
     expect(mapped?.message).toContain("different session");
     expect(mapScheduleMutationError(new Error("network timeout"))).toBeNull();
+  });
+
+  it("routes existing persisted tasks through activate and pause update plans", () => {
+    const existingDisabled = { isEnabled: false, scheduleCronTaskUid: "task-1" };
+    expect(getScheduleMutationPlan("activate", existingDisabled)).toEqual({ kind: "update", enable: true, taskUid: "task-1" });
+    expect(getScheduleMutationPlan("pause", { isEnabled: true, scheduleCronTaskUid: "task-1" })).toEqual({ kind: "update", enable: false, taskUid: "task-1" });
+    expect(getScheduleMutationPlan("activate", { isEnabled: true, scheduleCronTaskUid: "task-1" })).toEqual({ kind: "noop" });
+  });
+
+  it("retries the exact linked task as owner after a session ownership 403", async () => {
+    const calls: string[] = [];
+    const updater = async (_taskUid: string, _patch: { enable?: boolean }, token: string) => {
+      calls.push(token);
+      if (token) throw new Error("Heartbeat UpdateHeartbeatJob failed (403) permission_denied");
+      return { nextExecutionAt: null };
+    };
+
+    await expect(updateLinkedSchedule("linked-task", { enable: false }, "browser-session", updater)).resolves.toEqual({ nextExecutionAt: null });
+    expect(calls).toEqual(["browser-session", ""]);
+  });
+
+  it("does not hide non-permission heartbeat failures", async () => {
+    const updater = async () => { throw new Error("Heartbeat UpdateHeartbeatJob failed (500)"); };
+    await expect(updateLinkedSchedule("linked-task", { enable: false }, "browser-session", updater)).rejects.toThrow("500");
   });
 
   it("records reports only for completed, warning, or skipped outcomes", () => {

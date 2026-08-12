@@ -36,8 +36,11 @@
 - [x] Add a regression test or documented verification for existing-task re-enable/update using the correct user session token.
 - [x] Re-verify the published dashboard after the fix: clean activation, scheduled next run, and no error toast.
 - [x] Resolve cron task ownership mismatch between the published app user and the platform owner, without creating duplicate active jobs.
-- [ ] Cover activate and pause behavior for an existing task with a mocked ownership/session policy, including 403 handling.
+- [x] Cover activate and pause behavior for an existing task with a mocked ownership/session policy, including 403 handling.
 - [ ] Re-verify the published dashboard after the ownership fix and confirm no activation or pause error toast.
-- [ ] Add regression tests for pauseSchedule on an existing task, including mocked Heartbeat 403 responses and ownership/session policy behavior.
+- [x] Add regression tests for pauseSchedule on an existing task, including mocked Heartbeat 403 responses and ownership/session policy behavior.
 - [ ] Live-verify the published Pause monitoring action, then reactivate it, confirming no error toast in either direction.
 - [ ] Document the final live Heartbeat state after pause/reactivate: one active user-owned task UID and no duplicate cron jobs.
+- [x] Add an explicit test for the existing-task activateSchedule router path with mocked Heartbeat ownership/session outcomes.
+- [x] Add an explicit test for pauseSchedule on an existing persisted task, including mocked 403 handling and non-destructive TRPC behavior.
+- [x] Add a direct router-level pauseSchedule test where Heartbeat 403 remains unrecoverable, asserting the intended non-destructive TRPC error and unchanged persisted schedule state.

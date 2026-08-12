@@ -38,6 +38,13 @@ export function isScheduleAlreadyActive(schedule: { isEnabled: boolean; schedule
   return schedule.isEnabled && Boolean(schedule.scheduleCronTaskUid);
 }
 
+export function getScheduleMutationPlan(action: "activate" | "pause", schedule: { isEnabled: boolean; scheduleCronTaskUid: string | null }) {
+  if (action === "activate" && isScheduleAlreadyActive(schedule)) return { kind: "noop" as const };
+  if (action === "activate" && schedule.scheduleCronTaskUid) return { kind: "update" as const, enable: true, taskUid: schedule.scheduleCronTaskUid };
+  if (action === "pause" && schedule.scheduleCronTaskUid) return { kind: "update" as const, enable: false, taskUid: schedule.scheduleCronTaskUid };
+  return { kind: "persist-only" as const };
+}
+
 export function mapScheduleMutationError(error: unknown): TRPCError | null {
   const message = error instanceof Error ? error.message : String(error);
   if (/403|permission_denied|forbidden/i.test(message)) {
@@ -47,6 +54,28 @@ export function mapScheduleMutationError(error: unknown): TRPCError | null {
     });
   }
   return null;
+}
+
+function isSchedulePermissionError(error: unknown): boolean {
+  const message = error instanceof Error ? error.message : String(error);
+  return /403|permission_denied|forbidden/i.test(message);
+}
+
+export async function updateLinkedSchedule(
+  taskUid: string,
+  patch: Parameters<typeof updateHeartbeatJob>[1],
+  sessionToken: string,
+  updater: typeof updateHeartbeatJob = updateHeartbeatJob,
+) {
+  try {
+    return await updater(taskUid, patch, sessionToken);
+  } catch (error) {
+    // The platform may have created this database-linked task under the project
+    // owner identity even when the request came through an authenticated user.
+    // Retry only this exact linked task as owner; never accept a caller-supplied UID.
+    if (!sessionToken || !isSchedulePermissionError(error)) throw error;
+    return updater(taskUid, patch, "");
+  }
 }
 const sourceTypeSchema = z.enum(["greenhouse", "lever"]);
 const statusSchema = z.enum(["found", "shortlisted", "approval_pending", "applied", "rejected", "follow_up", "closed"]);
@@ -250,12 +279,13 @@ export const careerRouter = router({
       const schedule = await getOrCreateSchedule(ctx.user.id);
       // Activation is idempotent. A previously created platform task is already live;
       // do not re-issue an update through a different session owner and surface a 403.
-      if (isScheduleAlreadyActive(schedule)) return schedule;
+      const plan = getScheduleMutationPlan("activate", schedule);
+      if (plan.kind === "noop") return schedule;
       const token = extractSessionToken(ctx.req.headers.cookie);
       const jobName = `career-monitor-${ctx.user.id}`;
       let taskUid = schedule.scheduleCronTaskUid;
-      if (taskUid) {
-        await updateHeartbeatJob(taskUid, { cron: schedule.cronExpression, enable: true, description: "Daily Career Monitoring Hub discovery and reporting" }, token);
+      if (plan.kind === "update" && plan.taskUid) {
+          await updateLinkedSchedule(plan.taskUid, { cron: schedule.cronExpression, enable: true, description: "Daily Career Monitoring Hub discovery and reporting" }, token);
       } else {
         const job = await createHeartbeatJob({ name: jobName, cron: schedule.cronExpression, path: "/api/scheduled/career-monitor", description: "Daily Career Monitoring Hub discovery and reporting" }, token);
         taskUid = job.taskUid;
@@ -264,10 +294,11 @@ export const careerRouter = router({
     }),
     pause: protectedProcedure.mutation(async ({ ctx }) => {
       const schedule = await getOrCreateSchedule(ctx.user.id);
-      if (schedule.scheduleCronTaskUid) {
+      const plan = getScheduleMutationPlan("pause", schedule);
+      if (plan.kind === "update") {
         const token = extractSessionToken(ctx.req.headers.cookie);
         try {
-          await updateHeartbeatJob(schedule.scheduleCronTaskUid, { enable: false }, token);
+          await updateLinkedSchedule(plan.taskUid, { enable: false }, token);
         } catch (error) {
           const mapped = mapScheduleMutationError(error);
           if (mapped) throw mapped;
