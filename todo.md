@@ -46,6 +46,11 @@
 - [x] Add a direct router-level pauseSchedule test where Heartbeat 403 remains unrecoverable, asserting the intended non-destructive TRPC error and unchanged persisted schedule state.
 
 - [ ] Validate the first scheduled discovery run, including bilingual English/Hindi report generation, threshold behavior, and persisted run results.
+- [x] Make scheduled discovery complete within Heartbeat's execution budget by removing inline retry-prone AI calls and bounding per-run source/job work.
+- [x] Add regression tests proving scheduled discovery uses deterministic report/explanation fallbacks and does not invoke LLM or notification network calls inline.
+- [x] Add a mocked scheduled-workflow execution test proving no inline LLM or owner-notification calls occur.
+- [x] Add a bounded-load scheduled-workflow test covering multiple sources and the explicit per-run processing limit.
+- [ ] Publish the timeout-safe workflow and re-verify a completed Heartbeat callback with a persisted bilingual report.
 - [x] Add privacy-preserving recruiter-response email ingestion with read-only access, sender/thread matching, deduplication, and manual-review status updates only.
 - [x] Research and add additional legitimate public Greenhouse/Lever sources for Pharmaceutical QA and AI/Python/Automation tracks, with source verification and tests.
 
@@ -64,6 +69,9 @@
 
 - [ ] Add a signed server-to-server recruiter-email webhook contract so n8n can ingest events without a browser session or credential bypass.
 - [ ] Configure and test the webhook shared secret for the Career Hub deployment and n8n workflow.
+
+- [ ] Complete Gmail polling only after the owner authorizes a valid Google OAuth credential in n8n; do not create or store fabricated credentials.
+- [ ] Complete signed webhook delivery only after a legitimate shared secret is configured in both Career Hub and n8n.
 
 - [x] Add a dashboard form to manually import a recruiter email with sender, subject, received time, message ID, optional thread ID, and snippet.
 - [x] Display imported recruiter email events in the dashboard and allow only reviewed or ignored status changes.

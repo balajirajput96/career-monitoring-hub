@@ -68,3 +68,16 @@ Activation redirect fix verified at 15:15:57 local session time on 12 Aug 2026. 
 An OAuth-free manual recruiter-email importer was added to the signed-in Career Hub dashboard. It accepts a stable message ID, sender, subject, optional thread ID, received time, and optional snippet; it then reuses the protected event-ingestion contract for normalization, deduplication, contact matching, and manual-review-only persistence. The review queue shows an explicit load-error/retry state and permits only `reviewed` or `ignored` outcomes; it never sends an email or performs an external action.
 
 Vitest now discovers server and client tests. The complete suite passed with 13 test files and 49 tests, including actual rendered Home-component interaction tests for importer submission payloads and review-control restrictions. TypeScript validation also passed. Automatic Gmail polling remains dependent on a user-authorized Gmail credential in self-hosted n8n; no Google password, 2FA, or OAuth secret was handled by the agent.
+
+## Gmail delivery architecture evidence — 12 Aug 2026
+
+Official n8n documentation confirms that Gmail Trigger operates by polling at the chosen poll time and requires a Google credential: https://docs.n8n.io/integrations/builtin/trigger-nodes/n8n-nodes-base.gmailtrigger/. The official self-hosted Google OAuth guidance requires a Google Cloud project, Gmail API enablement, consent-screen configuration, a Web OAuth client, and the n8n instance's registered public callback URL: https://docs.n8n.io/integrations/builtin/credentials/google/oauth-generic/. Google also documents a separate Gmail API push path through Cloud Pub/Sub, but that route requires the same OAuth/API authorization plus Pub/Sub topic/subscription configuration and a periodically renewed mailbox watch: https://developers.google.com/workspace/gmail/api/guides/push.
+
+The selected n8n Gmail Trigger approach therefore remains a read-only polling integration rather than a direct Gmail webhook. It cannot be activated without the mailbox owner's Google OAuth authorization; the manual importer remains the active no-credential alternative.
+
+## Scheduled workflow timeout hardening — 12 Aug 2026
+
+- The active Heartbeat task previously recorded one failed callback with `Execution timeout of 30 seconds exceeded`; the recurring task remains the single user-owned `0 30 3 * * *` UTC schedule (09:00 IST).
+- `runScheduledCareerWorkflow` now concurrently fetches validated public feeds with an 8-second timeout, processes at most 12 jobs per source and 24 jobs per run, and writes deterministic bilingual reports without inline LLM or owner-notification calls.
+- A mocked scheduled-execution test verifies three sources, the 24-job global cap, a persisted Hindi report, source update records, and zero inline LLM/notification calls. The full suite passes **52/52** tests and `pnpm exec tsc --noEmit` passes.
+- The timeout-safe code still requires publication and a subsequent Heartbeat callback completion before the live schedule verification item can be closed.

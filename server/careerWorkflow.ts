@@ -1,6 +1,5 @@
-import { and, eq } from "drizzle-orm";
+import { and, eq, inArray } from "drizzle-orm";
 import { invokeLLM } from "./_core/llm";
-import { notifyOwner } from "./_core/notification";
 import {
   candidateProfiles,
   jobListings,
@@ -12,7 +11,6 @@ import {
   completeWorkflowRun,
   createWorkflowRun,
   getActiveSources,
-  buildResumeContext,
   getProfile,
   getRunningRun,
   markScheduleRun,
@@ -23,30 +21,22 @@ import {
 
 type SourceRow = Awaited<ReturnType<typeof getActiveSources>>[number];
 
+/**
+ * Heartbeat enforces a short callback deadline. Scheduled discovery is kept
+ * deterministic and time-bounded so a transient AI or notification service
+ * cannot block the recurring callback.
+ */
+export const scheduledExecutionPolicy = Object.freeze({
+  sourceFetchTimeoutMs: 8_000,
+  maxJobsPerSource: 12,
+  maxJobsPerRun: 24,
+  runtimeBudgetMs: 20_000,
+  useInlineAi: false,
+  sendInlineNotifications: false,
+});
+
 export function resolveReportLanguage(profileLanguage: string | null | undefined, scheduleLanguage: string) {
   return profileLanguage === "hi" || scheduleLanguage === "hi" ? "hi" as const : "en" as const;
-}
-
-export function buildCoverNotePrompt(language: "en" | "hi", job: DiscoveredJob, resumeContext: ReturnType<typeof buildResumeContext>) {
-  const languageName = language === "hi" ? "Hindi" : "English";
-  return {
-    system: `Write a concise, truthful, reviewable cover-note draft in ${languageName}. Use only the supplied verified profile context. Do not invent employment, credentials, salary, visa eligibility, or contact details. State uncertainty rather than guessing. This is a draft only; do not imply that it was submitted.`,
-    user: JSON.stringify({ job: { title: job.title, company: job.company, location: job.location, description: job.description?.slice(0, 2_000) }, resumeContext }),
-  };
-}
-
-export async function generateCoverNoteDraft(language: "en" | "hi", job: DiscoveredJob, resumeContext: ReturnType<typeof buildResumeContext>) {
-  const prompt = buildCoverNotePrompt(language, job, resumeContext);
-  try {
-    const response = await invokeLLM({ model: "gpt-5-mini", maxTokens: 260, messages: [
-      { role: "system", content: prompt.system },
-      { role: "user", content: prompt.user },
-    ] });
-    const content = response.choices[0]?.message.content;
-    return typeof content === "string" && content.trim() ? content.trim() : "Draft unavailable; review the verified profile and job description manually.";
-  } catch {
-    return "Draft unavailable; review the verified profile and job description manually.";
-  }
 }
 
 export type DiscoveredJob = {
@@ -60,6 +50,28 @@ export type DiscoveredJob = {
   applicationUrl?: string;
   postedAt?: Date;
 };
+
+export function buildCoverNotePrompt(language: "en" | "hi", job: DiscoveredJob, resumeContext: Record<string, unknown>) {
+  const languageName = language === "hi" ? "Hindi" : "English";
+  return {
+    system: `Write a concise, truthful, reviewable cover-note draft in ${languageName}. Use only the supplied verified profile context. Do not invent employment, credentials, salary, visa eligibility, or contact details. State uncertainty rather than guessing. This is a draft only; do not imply that it was submitted.`,
+    user: JSON.stringify({ job: { title: job.title, company: job.company, location: job.location, description: job.description?.slice(0, 2_000) }, resumeContext }),
+  };
+}
+
+export async function generateCoverNoteDraft(language: "en" | "hi", job: DiscoveredJob, resumeContext: Record<string, unknown>) {
+  const prompt = buildCoverNotePrompt(language, job, resumeContext);
+  try {
+    const response = await invokeLLM({ model: "gpt-5-mini", maxTokens: 260, messages: [
+      { role: "system", content: prompt.system },
+      { role: "user", content: prompt.user },
+    ] });
+    const content = response.choices[0]?.message.content;
+    return typeof content === "string" && content.trim() ? content.trim() : "Draft unavailable; review the verified profile and job description manually.";
+  } catch {
+    return "Draft unavailable; review the verified profile and job description manually.";
+  }
+}
 
 function textContent(value: unknown) {
   return String(value ?? "").replace(/<[^>]*>/g, " ").replace(/\s+/g, " ").trim();
@@ -81,7 +93,7 @@ async function fetchSourceJobs(source: SourceRow): Promise<DiscoveredJob[]> {
 
   const response = await fetch(source.endpointUrl, {
     headers: { accept: "application/json" },
-    signal: AbortSignal.timeout(12_000),
+    signal: AbortSignal.timeout(scheduledExecutionPolicy.sourceFetchTimeoutMs),
   });
   if (!response.ok) throw new Error(`Source returned HTTP ${response.status}`);
   const data = await response.json() as Record<string, unknown>;
@@ -119,7 +131,7 @@ async function generateMatchExplanation(
   language: "en" | "hi",
   job: DiscoveredJob,
   score: ReturnType<typeof scoreJob>,
-  resumeContext: ReturnType<typeof buildResumeContext>
+  resumeContext: Record<string, unknown>
 ) {
   const languageName = language === "hi" ? "Hindi" : "English";
   try {
@@ -138,15 +150,9 @@ async function generateMatchExplanation(
   }
 }
 
-async function generateDailySummary(
-  language: "en" | "hi",
-  stats: Record<string, number>,
-  blockers: string[]
-) {
+// Kept as a non-scheduled helper for explicit user-invoked reports only.
+async function generateDailySummary(language: "en" | "hi", stats: Record<string, number>, blockers: string[]) {
   const languageName = language === "hi" ? "Hindi" : "English";
-  const fallback = language === "hi"
-    ? `दैनिक जॉब रन पूरा हुआ। ${stats.newJobs} नए अवसर मिले, ${stats.highPriority} उच्च-प्राथमिकता match हैं और ${stats.sourceErrors} source errors दर्ज हुए।`
-    : `Daily job run completed. ${stats.newJobs} new opportunities were found, ${stats.highPriority} are high-priority matches, and ${stats.sourceErrors} source errors were recorded.`;
   try {
     const response = await invokeLLM({
       model: "gpt-5-mini",
@@ -157,10 +163,21 @@ async function generateDailySummary(
       ],
     });
     const content = response.choices[0]?.message.content;
-    return typeof content === "string" && content.trim() ? content.trim() : fallback;
+    return typeof content === "string" && content.trim() ? content.trim() : buildDeterministicDailySummary(language, stats, blockers);
   } catch {
-    return fallback;
+    return buildDeterministicDailySummary(language, stats, blockers);
   }
+}
+
+export function buildDeterministicDailySummary(language: "en" | "hi", stats: Record<string, number>, blockers: string[]) {
+  const sourceNote = blockers.length
+    ? language === "hi"
+      ? ` ${blockers.length} स्रोत-संबंधी चेतावनी review के लिए दर्ज है।`
+      : ` ${blockers.length} source warning${blockers.length === 1 ? " is" : "s are"} recorded for review.`
+    : "";
+  return language === "hi"
+    ? `दैनिक जॉब रन पूरा हुआ। ${stats.newJobs} नए अवसर मिले, ${stats.highPriority} उच्च-प्राथमिकता match हैं और ${stats.sourceErrors} source errors दर्ज हुए। सभी applications और messages के लिए manual approval आवश्यक है।${sourceNote}`
+    : `Daily job run completed. ${stats.newJobs} new opportunities were found, ${stats.highPriority} are high-priority matches, and ${stats.sourceErrors} source errors were recorded. Manual approval remains required for every application and message.${sourceNote}`;
 }
 
 export function shouldRecordDailyReport(status: "completed" | "completed_with_warnings" | "skipped" | "failed") {
@@ -195,26 +212,51 @@ export async function runScheduledCareerWorkflow(scheduleId: number) {
   const sources = await getActiveSources(schedule.userId);
   const stats = { newJobs: 0, highPriority: 0, sourceErrors: 0, sourcesChecked: sources.length };
   const blockers: string[] = [];
-  const highPriorityTitles: string[] = [];
+  const deadline = Date.now() + scheduledExecutionPolicy.runtimeBudgetMs;
 
   try {
-    for (const source of sources) {
-      let sourceJobs: DiscoveredJob[] = [];
+    const sourceResults = await Promise.all(sources.map(async source => {
       try {
-        sourceJobs = await fetchSourceJobs(source);
-        await updateSourceResult(source.id, { fetchedAt: new Date() });
+        return { source, jobs: await fetchSourceJobs(source) } as const;
       } catch (error) {
+        return { source, error } as const;
+      }
+    }));
+    let remainingJobs = scheduledExecutionPolicy.maxJobsPerRun;
+
+    for (const result of sourceResults) {
+      const { source } = result;
+      if ("error" in result) {
         stats.sourceErrors += 1;
-        const message = error instanceof Error ? error.message : "Unknown source failure";
+        const message = result.error instanceof Error ? result.error.message : "Unknown source failure";
         blockers.push(`${source.name}: ${message}`);
         await updateSourceResult(source.id, { error: message, fetchedAt: new Date() });
         continue;
       }
 
-      for (const job of sourceJobs.slice(0, 150)) {
-        const externalKey = stableExternalKey(source.id, job.sourceJobId);
-        const existing = (await db.select().from(jobListings).where(and(eq(jobListings.userId, schedule.userId), eq(jobListings.externalKey, externalKey))).limit(1))[0];
-        if (existing) continue;
+      await updateSourceResult(source.id, { fetchedAt: new Date() });
+      if (remainingJobs <= 0 || Date.now() >= deadline) {
+        blockers.push("Run processing limit reached; remaining public-feed jobs will be checked on the next run.");
+        break;
+      }
+
+      const candidates = result.jobs
+        .slice(0, Math.min(scheduledExecutionPolicy.maxJobsPerSource, remainingJobs))
+        .map(job => ({ job, externalKey: stableExternalKey(source.id, job.sourceJobId) }));
+      const existingRows = candidates.length
+        ? await db.select({ externalKey: jobListings.externalKey }).from(jobListings).where(and(
+          eq(jobListings.userId, schedule.userId),
+          inArray(jobListings.externalKey, candidates.map(candidate => candidate.externalKey))
+        ))
+        : [];
+      const existingKeys = new Set(existingRows.map(row => row.externalKey));
+
+      for (const { job, externalKey } of candidates) {
+        if (Date.now() >= deadline) {
+          blockers.push("Run processing limit reached; remaining public-feed jobs will be checked on the next run.");
+          break;
+        }
+        if (existingKeys.has(externalKey)) continue;
 
         const deterministic = scoreJob(profile, job as JobForScoring);
         const result = await db.insert(jobListings).values({
@@ -234,10 +276,6 @@ export async function runScheduledCareerWorkflow(scheduleId: number) {
           eligibility: deterministic.eligibility,
         });
         const jobId = Number(result[0].insertId);
-        const shouldExplain = deterministic.overallScore >= schedule.highPriorityThreshold;
-        const rationale = shouldExplain
-          ? await generateMatchExplanation(effectiveLanguage, job, deterministic, buildResumeContext(profile))
-          : deterministic.rationale;
         await db.insert(jobMatches).values({
           userId: schedule.userId,
           jobId,
@@ -246,41 +284,25 @@ export async function runScheduledCareerWorkflow(scheduleId: number) {
           experienceScore: deterministic.experienceScore,
           locationScore: deterministic.locationScore,
           eligibility: deterministic.eligibility,
-          rationale,
+          rationale: deterministic.rationale,
           rationaleLanguage: effectiveLanguage,
           evidence: deterministic.evidence,
         });
         stats.newJobs += 1;
-        if (deterministic.overallScore >= schedule.highPriorityThreshold) {
-          stats.highPriority += 1;
-          highPriorityTitles.push(`${job.title} — ${job.company} (${deterministic.overallScore})`);
-        }
+        remainingJobs -= 1;
+        if (deterministic.overallScore >= schedule.highPriorityThreshold) stats.highPriority += 1;
       }
     }
 
-    const summary = await generateDailySummary(effectiveLanguage, stats, blockers);
+    const summary = buildDeterministicDailySummary(effectiveLanguage, stats, blockers);
     const status = stats.sourceErrors > 0 ? "completed_with_warnings" : "completed";
     await completeWorkflowRun(run.id, { status, statistics: stats, summary, error: blockers.length ? blockers.join(" | ") : null });
     if (shouldRecordDailyReport(status)) await recordDailyReport(schedule.userId, run.id, effectiveLanguage, summary, stats);
     await markScheduleRun(schedule.id);
-
-    if (stats.highPriority > 0) {
-      await notifyOwner({
-        title: `${stats.highPriority} high-priority job match${stats.highPriority === 1 ? "" : "es"}`,
-        content: highPriorityTitles.slice(0, 3).join("\n"),
-      });
-    }
-    if (stats.sourceErrors > 0) {
-      await notifyOwner({
-        title: "Career monitoring needs attention",
-        content: `${stats.sourceErrors} configured source${stats.sourceErrors === 1 ? "" : "s"} could not be checked. Review the latest workflow report before relying on today’s results.`,
-      });
-    }
     return { ok: true, stats, status };
   } catch (error) {
     const message = error instanceof Error ? error.message : "Unexpected workflow failure";
     await completeWorkflowRun(run.id, { status: "failed", statistics: stats, summary: "Scheduled job run failed.", error: message });
-    await notifyOwner({ title: "Career monitoring run failed", content: "A scheduled run stopped before completion. No external action was taken; review the workflow log for details." });
     throw error;
   }
 }
