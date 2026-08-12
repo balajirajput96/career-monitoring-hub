@@ -27,7 +27,29 @@ export function resolveReportLanguage(profileLanguage: string | null | undefined
   return profileLanguage === "hi" || scheduleLanguage === "hi" ? "hi" as const : "en" as const;
 }
 
-type DiscoveredJob = {
+export function buildCoverNotePrompt(language: "en" | "hi", job: DiscoveredJob, resumeContext: ReturnType<typeof buildResumeContext>) {
+  const languageName = language === "hi" ? "Hindi" : "English";
+  return {
+    system: `Write a concise, truthful, reviewable cover-note draft in ${languageName}. Use only the supplied verified profile context. Do not invent employment, credentials, salary, visa eligibility, or contact details. State uncertainty rather than guessing. This is a draft only; do not imply that it was submitted.`,
+    user: JSON.stringify({ job: { title: job.title, company: job.company, location: job.location, description: job.description?.slice(0, 2_000) }, resumeContext }),
+  };
+}
+
+export async function generateCoverNoteDraft(language: "en" | "hi", job: DiscoveredJob, resumeContext: ReturnType<typeof buildResumeContext>) {
+  const prompt = buildCoverNotePrompt(language, job, resumeContext);
+  try {
+    const response = await invokeLLM({ model: "gpt-5-mini", maxTokens: 260, messages: [
+      { role: "system", content: prompt.system },
+      { role: "user", content: prompt.user },
+    ] });
+    const content = response.choices[0]?.message.content;
+    return typeof content === "string" && content.trim() ? content.trim() : "Draft unavailable; review the verified profile and job description manually.";
+  } catch {
+    return "Draft unavailable; review the verified profile and job description manually.";
+  }
+}
+
+export type DiscoveredJob = {
   sourceJobId: string;
   title: string;
   company: string;
@@ -141,6 +163,14 @@ async function generateDailySummary(
   }
 }
 
+export function shouldRecordDailyReport(status: "completed" | "completed_with_warnings" | "skipped" | "failed") {
+  return status === "completed" || status === "completed_with_warnings" || status === "skipped";
+}
+
+export function approvalIsReviewOnly() {
+  return true;
+}
+
 export async function runScheduledCareerWorkflow(scheduleId: number) {
   const db = await requireCareerDb();
   const schedule = (await db.select().from(workflowSchedules).where(eq(workflowSchedules.id, scheduleId)).limit(1))[0];
@@ -231,7 +261,7 @@ export async function runScheduledCareerWorkflow(scheduleId: number) {
     const summary = await generateDailySummary(effectiveLanguage, stats, blockers);
     const status = stats.sourceErrors > 0 ? "completed_with_warnings" : "completed";
     await completeWorkflowRun(run.id, { status, statistics: stats, summary, error: blockers.length ? blockers.join(" | ") : null });
-    await recordDailyReport(schedule.userId, run.id, effectiveLanguage, summary, stats);
+    if (shouldRecordDailyReport(status)) await recordDailyReport(schedule.userId, run.id, effectiveLanguage, summary, stats);
     await markScheduleRun(schedule.id);
 
     if (stats.highPriority > 0) {

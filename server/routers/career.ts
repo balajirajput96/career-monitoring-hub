@@ -5,6 +5,8 @@ import { COOKIE_NAME } from "@shared/const";
 import { createHeartbeatJob, deleteHeartbeatJob, updateHeartbeatJob } from "../_core/heartbeat";
 import { notifyOwner } from "../_core/notification";
 import { protectedProcedure, router } from "../_core/trpc";
+import { buildResumeContext } from "../careerStore";
+import { generateCoverNoteDraft } from "../careerWorkflow";
 import { storagePut } from "../storage";
 import {
   addSource,
@@ -12,9 +14,14 @@ import {
   decideApproval,
   getDashboardData,
   getJobForUser,
+  getApplicationForUser,
+  isDuplicateApplicationSubmission,
   getOrCreateSchedule,
   getProfile,
   listApplications,
+  listRecruiterContacts,
+  addRecruiterContact,
+  updateRecruiterContact,
   listApprovals,
   listJobs,
   listSources,
@@ -102,6 +109,33 @@ export const careerRouter = router({
       return { name: `${safeStem}${extension}`, storageKey: stored.key, url: stored.url };
     }),
   }),
+  contacts: router({
+    list: protectedProcedure.query(({ ctx }) => listRecruiterContacts(ctx.user.id)),
+    add: protectedProcedure.input(z.object({
+      applicationId: z.number().int().positive().optional(),
+      jobId: z.number().int().positive().optional(),
+      name: z.string().trim().min(1).max(255),
+      company: z.string().trim().max(300).optional(),
+      role: z.string().trim().max(255).optional(),
+      email: z.string().email().max(320).optional(),
+      linkedInUrl: z.string().url().max(2_000).optional(),
+      responseStatus: z.enum(["discovered", "contacted", "replied", "no_response", "closed"]).optional(),
+      lastContactAt: z.date().optional(),
+      notes: z.string().trim().max(5_000).optional(),
+    })).mutation(({ ctx, input }) => addRecruiterContact(ctx.user.id, { ...input, responseStatus: input.responseStatus ?? "discovered" })),
+    update: protectedProcedure.input(z.object({
+      contactId: z.number().int().positive(),
+      responseStatus: z.enum(["discovered", "contacted", "replied", "no_response", "closed"]).optional(),
+      lastContactAt: z.date().optional(),
+      notes: z.string().trim().max(5_000).optional(),
+    })).mutation(async ({ ctx, input }) => {
+      const { contactId, ...values } = input;
+      const updated = await updateRecruiterContact(ctx.user.id, contactId, values);
+      if (!updated) throw new TRPCError({ code: "NOT_FOUND", message: "Recruiter contact not found." });
+      if (values.responseStatus === "replied") await notifyOwner({ title: "Recruiter response recorded", content: `${updated.name}${updated.company ? ` at ${updated.company}` : ""} is marked as replied. Review the contact record and decide any next message manually.` });
+      return updated;
+    }),
+  }),
   sources: router({
     list: protectedProcedure.query(({ ctx }) => listSources(ctx.user.id)),
     add: protectedProcedure.input(sourceInputSchema).mutation(({ ctx, input }) => addSource(ctx.user.id, { ...input, config: input.config ?? null })),
@@ -112,6 +146,29 @@ export const careerRouter = router({
   }),
   applications: router({
     list: protectedProcedure.query(({ ctx }) => listApplications(ctx.user.id)),
+    draftCoverNote: protectedProcedure.input(z.object({
+      jobId: z.number().int().positive(),
+      language: languageSchema.optional(),
+    })).mutation(async ({ ctx, input }) => {
+      const [job, profile] = await Promise.all([getJobForUser(ctx.user.id, input.jobId), getProfile(ctx.user.id)]);
+      if (!job || !profile) throw new TRPCError({ code: "NOT_FOUND", message: "Job or career profile not found." });
+      const language = input.language ?? (profile.outputLanguage === "hi" ? "hi" : "en");
+      const draft = await generateCoverNoteDraft(language, {
+        sourceJobId: job.externalKey,
+        title: job.title,
+        company: job.company,
+        location: job.location,
+        workplaceType: job.workplaceType,
+        description: job.description ?? undefined,
+        sourceUrl: job.sourceUrl,
+        applicationUrl: job.applicationUrl ?? undefined,
+        postedAt: job.postedAt ?? undefined,
+      }, buildResumeContext(profile));
+      return updateApplication(ctx.user.id, input.jobId, {
+        coverNoteDraft: draft,
+        coverNoteLanguage: language,
+      });
+    }),
     update: protectedProcedure.input(z.object({
       jobId: z.number().int().positive(),
       status: statusSchema,
@@ -121,6 +178,12 @@ export const careerRouter = router({
     })).mutation(async ({ ctx, input }) => {
       const job = await getJobForUser(ctx.user.id, input.jobId);
       if (!job) throw new TRPCError({ code: "NOT_FOUND", message: "Job not found." });
+      const profile = await getProfile(ctx.user.id);
+      if (input.resumeVersion && !(profile?.resumeVersions ?? []).some(resume => resume.name === input.resumeVersion || resume.storageKey === input.resumeVersion)) {
+        throw new TRPCError({ code: "BAD_REQUEST", message: "Select a resume version already stored in your profile." });
+      }
+      const existing = await getApplicationForUser(ctx.user.id, input.jobId);
+      if (isDuplicateApplicationSubmission(existing?.status, input.status)) return existing;
       return updateApplication(ctx.user.id, input.jobId, input);
     }),
   }),

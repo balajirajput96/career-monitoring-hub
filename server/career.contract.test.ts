@@ -1,7 +1,25 @@
 import { describe, expect, it } from "vitest";
 import { profileInputSchema, sourceInputSchema } from "./routers/career";
-import { resolveReportLanguage } from "./careerWorkflow";
-import { buildResumeContext } from "./careerStore";
+import { approvalIsReviewOnly, buildCoverNotePrompt, resolveReportLanguage, shouldRecordDailyReport } from "./careerWorkflow";
+import { buildResumeContext, isDuplicateApplicationSubmission } from "./careerStore";
+
+describe("workflow safety contracts", () => {
+  it("records reports only for completed, warning, or skipped outcomes", () => {
+    expect(shouldRecordDailyReport("completed")).toBe(true);
+    expect(shouldRecordDailyReport("completed_with_warnings")).toBe(true);
+    expect(shouldRecordDailyReport("skipped")).toBe(true);
+    expect(shouldRecordDailyReport("failed")).toBe(false);
+  });
+
+  it("keeps approval actions review-only until a separate guarded executor exists", () => {
+    expect(approvalIsReviewOnly()).toBe(true);
+  });
+
+  it("blocks repeated applied submissions for the same persisted application", () => {
+    expect(isDuplicateApplicationSubmission("applied", "applied")).toBe(true);
+    expect(isDuplicateApplicationSubmission("shortlisted", "applied")).toBe(false);
+  });
+});
 
 describe("career profile contract", () => {
   it("accepts verified education, experience, and source facts", () => {
@@ -39,6 +57,29 @@ describe("resume context contract", () => {
     expect(context.verifiedExperience[0]?.years).toBe(2);
     expect(context.factsSource).toContain("docs.google.com");
     expect(JSON.stringify(context)).not.toContain("invented");
+  });
+});
+
+describe("cover-note draft contract", () => {
+  it("builds a review-only prompt with anti-fabrication constraints", () => {
+    const prompt = buildCoverNotePrompt("en", {
+      sourceJobId: "job-1",
+      title: "QA Officer",
+      company: "Example Pharma",
+      location: "India",
+      workplaceType: "onsite",
+      description: "GMP and QA role",
+      sourceUrl: "https://example.com/jobs/1",
+    }, {
+      education: ["Diploma in Biotechnology"],
+      verifiedExperience: [{ title: "Quality Officer / QA", years: 2, domain: "Pharmaceutical quality assurance" }],
+      factsSource: "https://docs.google.com/document/d/example",
+      skills: ["GMP"],
+      preferredRoles: ["QA Officer"],
+    });
+    expect(prompt.system).toContain("reviewable");
+    expect(prompt.system).toContain("Do not invent");
+    expect(prompt.user).toContain("Diploma in Biotechnology");
   });
 });
 

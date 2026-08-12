@@ -160,6 +160,15 @@ export async function getJobForUser(userId: number, jobId: number) {
   return (await db.select().from(jobListings).where(and(eq(jobListings.id, jobId), eq(jobListings.userId, userId))).limit(1))[0];
 }
 
+export function isDuplicateApplicationSubmission(existingStatus: string | undefined, requestedStatus: string) {
+  return existingStatus === "applied" && requestedStatus === "applied";
+}
+
+export async function getApplicationForUser(userId: number, jobId: number) {
+  const db = await requireCareerDb();
+  return (await db.select().from(applications).where(and(eq(applications.userId, userId), eq(applications.jobId, jobId))).limit(1))[0];
+}
+
 export async function listApplications(userId: number) {
   const db = await requireCareerDb();
   return db
@@ -169,6 +178,23 @@ export async function listApplications(userId: number) {
     .leftJoin(jobMatches, and(eq(jobMatches.jobId, applications.jobId), eq(jobMatches.userId, userId)))
     .where(eq(applications.userId, userId))
     .orderBy(desc(applications.updatedAt));
+}
+
+export async function listRecruiterContacts(userId: number) {
+  const db = await requireCareerDb();
+  return db.select().from(recruiterContacts).where(eq(recruiterContacts.userId, userId)).orderBy(desc(recruiterContacts.updatedAt));
+}
+
+export async function addRecruiterContact(userId: number, input: Pick<typeof recruiterContacts.$inferInsert, "applicationId" | "jobId" | "name" | "company" | "role" | "email" | "linkedInUrl" | "responseStatus" | "lastContactAt" | "notes">) {
+  const db = await requireCareerDb();
+  const result = await db.insert(recruiterContacts).values({ userId, ...input });
+  return (await db.select().from(recruiterContacts).where(eq(recruiterContacts.id, Number(result[0].insertId))).limit(1))[0];
+}
+
+export async function updateRecruiterContact(userId: number, contactId: number, values: Partial<typeof recruiterContacts.$inferInsert>) {
+  const db = await requireCareerDb();
+  await db.update(recruiterContacts).set(values).where(and(eq(recruiterContacts.id, contactId), eq(recruiterContacts.userId, userId)));
+  return (await db.select().from(recruiterContacts).where(and(eq(recruiterContacts.id, contactId), eq(recruiterContacts.userId, userId))).limit(1))[0];
 }
 
 export async function updateApplication(
@@ -217,7 +243,7 @@ export async function decideApproval(userId: number, approvalId: number, decisio
 
 export async function getDashboardData(userId: number) {
   const db = await requireCareerDb();
-  const [schedule, profile, jobs, applicationsList, approvals, reports, runs, sources] = await Promise.all([
+  const [schedule, profile, jobs, applicationsList, approvals, reports, runs, sources, contacts] = await Promise.all([
     getOrCreateSchedule(userId),
     getProfile(userId),
     listJobs(userId, { limit: 8 }),
@@ -226,6 +252,7 @@ export async function getDashboardData(userId: number) {
     db.select().from(dailyReports).where(eq(dailyReports.userId, userId)).orderBy(desc(dailyReports.createdAt)).limit(3),
     db.select().from(workflowRuns).where(eq(workflowRuns.userId, userId)).orderBy(desc(workflowRuns.startedAt)).limit(5),
     listSources(userId),
+    listRecruiterContacts(userId),
   ]);
   const highPriority = jobs.filter(item => (item.match?.overallScore ?? 0) >= schedule.highPriorityThreshold);
   return {
@@ -237,6 +264,7 @@ export async function getDashboardData(userId: number) {
     reports,
     runs,
     sources,
+    recruiterContacts: contacts,
     metrics: {
       highPriorityCount: highPriority.length,
       trackedApplications: applicationsList.length,
