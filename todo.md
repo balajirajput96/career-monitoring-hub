@@ -93,3 +93,9 @@
 - [x] Verify the current connected-service inventory and GitHub browser sign-in status; request secure owner takeover only if GitHub authentication is unavailable.
 - [x] Open GitHub in the browser and verify the web session; request owner takeover only if browser authentication is unavailable.
 - [x] Document the verified connected-service inventory and GitHub browser-session result in project verification notes.
+
+- [x] Assess a no-cost alternative to persistent Render n8n for recruiter-email ingestion without weakening read-only and manual-review safety.
+- [x] Compare the built-in read-only Gmail connector/manual importer, connector-capable bridge, and inactive n8n on Render Free.
+- [x] Select the safest viable no-cost option: owner-run Apps Script template or existing manual importer, without fabricating OAuth credentials or bypassing provider authentication.
+- [x] Document that no paid Render plan, persistent disk, card, or billing change was made.
+- [x] Repair and re-verify the transient dev-server module-resolution state; current server starts cleanly and TypeScript plus 58 Vitest tests pass.

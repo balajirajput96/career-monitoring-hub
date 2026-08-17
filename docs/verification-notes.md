@@ -111,3 +111,10 @@ To remove stale metadata safely, the old task `b7SZZTySnbbX7ewHx3CJwV` was retir
 ## n8n read-only handoff
 
 `docs/n8n-readonly-gmail-webhook-setup.md` now provides a reproducible owner-run configuration for Gmail Trigger → minimal event transformation → exact-body HMAC signing → Career Hub webhook delivery. The guide cites current n8n documentation, preserves the existing no-send/no-draft/no-auto-apply boundaries, and documents a concrete owner validation checklist. It intentionally requires a legitimate Gmail OAuth credential and a host-protected shared secret before activation.
+
+
+## No-cost Gmail bridge decision and runtime recovery — 17 Aug 2026
+
+Paid Render persistence was declined. The safe no-cost decision is to retain the existing Career Hub manual recruiter-email importer and provide an owner-run Google Apps Script template for optional read-only Gmail polling. The template does not store credentials in Career Hub, does not send or draft mail, and posts only minimized recruiter-event fields through the signed webhook after owner authorization. n8n remains inactive on Render Free because its owner/workflow state is lost on redeploy without a persistent disk.
+
+After rollback and restart, the latest `devserver.log` entries show normal OAuth initialization and `Server running on http://localhost:3000/` with no current `ERR_MODULE_NOT_FOUND`; the earlier webhook error is historical. TypeScript reports zero errors and the full Vitest suite remains 58/58. The baseline-browser-mapping notice is a dependency freshness warning, not an application runtime failure.
