@@ -76,7 +76,6 @@
 - [ ] Execute and verify one real Hindi-language scheduled callback with a persisted Hindi daily report, then document both English and Hindi live report evidence.
 - [ ] Repair and re-verify the active Heartbeat task after the temporary validation attempt left a stale next-execution timestamp despite the restored 09:00 IST cron expression.
 - [ ] Verify the first completed callback from replacement task `3HB9Jfaqhug4ADmtvrqCGA` and its persisted run/report records after 09:00 IST on 18 Aug 2026.
-- [ ] Schedule one post-09:00 IST agent verification of the replacement task's first execution and persisted run/report evidence.
 
 - [ ] Complete Gmail polling only after the owner authorizes a valid Google OAuth credential in n8n; do not create or store fabricated credentials.
 - [ ] Complete signed webhook delivery only after a legitimate shared secret is configured in both Career Hub and n8n.
