@@ -118,3 +118,8 @@ To remove stale metadata safely, the old task `b7SZZTySnbbX7ewHx3CJwV` was retir
 Paid Render persistence was declined. The safe no-cost decision is to retain the existing Career Hub manual recruiter-email importer and provide an owner-run Google Apps Script template for optional read-only Gmail polling. The template does not store credentials in Career Hub, does not send or draft mail, and posts only minimized recruiter-event fields through the signed webhook after owner authorization. n8n remains inactive on Render Free because its owner/workflow state is lost on redeploy without a persistent disk.
 
 After rollback and restart, the latest `devserver.log` entries show normal OAuth initialization and `Server running on http://localhost:3000/` with no current `ERR_MODULE_NOT_FOUND`; the earlier webhook error is historical. TypeScript reports zero errors and the full Vitest suite remains 58/58. The baseline-browser-mapping notice is a dependency freshness warning, not an application runtime failure.
+
+
+## Replacement Heartbeat pre-execution check — 17 Aug 2026 18:39 UTC
+
+The platform registry currently contains exactly one enabled replacement task: `3HB9Jfaqhug4ADmtvrqCGA`, callback `/api/scheduled/career-monitor`, cron `0 30 3 * * *`, and next execution `2026-08-18T03:30:00Z`. The task has no runs yet because the current UTC time is `2026-08-17T18:39:18Z`; this is before the scheduled execution. The stale metadata repair is therefore complete, while first-callback and persisted Hindi-report verification remain open.

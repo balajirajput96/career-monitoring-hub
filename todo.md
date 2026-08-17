@@ -74,7 +74,7 @@
 - [x] Create a precise owner-run n8n read-only Gmail-to-Career-Hub setup guide, including OAuth redirect URI, event minimization, and HMAC payload signing.
 
 - [ ] Execute and verify one real Hindi-language scheduled callback with a persisted Hindi daily report, then document both English and Hindi live report evidence.
-- [ ] Repair and re-verify the active Heartbeat task after the temporary validation attempt left a stale next-execution timestamp despite the restored 09:00 IST cron expression.
+- [x] Repair and re-verify the active Heartbeat task after the temporary validation attempt left a stale next-execution timestamp despite the restored 09:00 IST cron expression.
 - [ ] Verify the first completed callback from replacement task `3HB9Jfaqhug4ADmtvrqCGA` and its persisted run/report records after 09:00 IST on 18 Aug 2026.
 
 - [ ] Complete Gmail polling only after the owner authorizes a valid Google OAuth credential in n8n; do not create or store fabricated credentials.
