@@ -36,8 +36,8 @@ export const users = mysqlTable("users", {
 export type User = typeof users.$inferSelect;
 export type InsertUser = typeof users.$inferInsert;
 
-export const jobTrackEnum = mysqlEnum("jobTrack", ["pharma_qa", "ai_automation"]);
-export const jobSourceTypeEnum = mysqlEnum("jobSourceType", [
+export const jobTrackEnum = mysqlEnum("track", ["pharma_qa", "ai_automation"]);
+export const jobSourceTypeEnum = mysqlEnum("sourceType", [
   "greenhouse",
   "lever",
   "company_careers",

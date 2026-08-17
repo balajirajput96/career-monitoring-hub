@@ -107,3 +107,7 @@
 - [x] Remediate actionable dependency security findings and restore compatibility across the supported Vite/Vitest toolchain.
 - [x] Eliminate or document the remaining non-runtime transitive dependency advisory after verifying package-manager constraints and build behavior.
 - [x] Add a GitHub Actions workflow that runs frozen installation, TypeScript, tests, production build, and high/critical audit gating on pushes and pull requests.
+- [x] Repair the deployed jobSources and jobListings column contract so source reads, dashboard counts, and scheduled discovery use the schema declared by Drizzle without runtime SQL failures.
+- [x] Add automated regression coverage for the Drizzle physical-column names used by source and listing track queries.
+- [ ] Reconcile the active schedule and verified source ownership with the signed-in dashboard user so the live UI accurately reflects the configured daily monitor. Ownership audit confirms the monitored data belongs to Balaji Rajput (user 180001), while the sandbox preview session is a separate Dilip Singh admin account; do not move data across users.
+- [ ] Re-verify the live dashboard under Balaji Rajput's intended signed-in session and confirm the active schedule, four verified sources, and profile render without cross-user data changes.

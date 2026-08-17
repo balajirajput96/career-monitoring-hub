@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import { jobListings, jobSources } from "../drizzle/schema";
 import { buildApprovalNotice, extractSessionToken, getScheduleMutationPlan, isScheduleAlreadyActive, mapScheduleMutationError, profileInputSchema, sourceInputSchema, updateLinkedSchedule } from "./routers/career";
 import { approvalIsReviewOnly, buildCoverNotePrompt, resolveReportLanguage, shouldRecordDailyReport } from "./careerWorkflow";
 import { buildResumeContext, isDuplicateApplicationSubmission } from "./careerStore";
@@ -139,6 +140,12 @@ describe("bilingual report language contract", () => {
 describe("public job source contract", () => {
   const base = { name: "Example feed", track: "pharma_qa" as const };
 
+  it("maps source and listing track fields to the deployed physical column names", () => {
+    expect(jobSources.sourceType.name).toBe("sourceType");
+    expect(jobSources.track.name).toBe("track");
+    expect(jobListings.track.name).toBe("track");
+  });
+
   it("accepts public Greenhouse JSON endpoints", () => {
     expect(sourceInputSchema.safeParse({ ...base, sourceType: "greenhouse", endpointUrl: "https://boards-api.greenhouse.io/v1/boards/example/jobs" }).success).toBe(true);
   });
@@ -154,4 +161,3 @@ describe("public job source contract", () => {
 });
 
 export {};
-

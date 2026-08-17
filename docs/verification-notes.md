@@ -140,3 +140,11 @@ The final local audit reports **0 critical, 0 high, 0 low, and 1 moderate** advi
 ## GitHub Actions CI — 17 Aug 2026
 
 GitHub Actions CI now runs on every push and pull request targeting `main`. The workflow uses the repository's pinned pnpm package-manager metadata and executes frozen installation, TypeScript type-checking, the full Vitest suite, a production build, and a critical/high advisory gate. Hosted run [`32059380143`](https://github.com/balajirajput96/career-monitoring-hub/actions/runs/32059380143) completed successfully for commit `380d709`, including all five validation stages. The first two CI runs exposed only workflow bootstrap configuration mistakes (pnpm setup/cache ordering and duplicated version declarations); both were fixed, then validated by the successful third run.
+
+## Deployed database contract repair — 17 Aug 2026
+
+The deployed database had legacy physical names (`jobSourceType`, `jobTrack`) while runtime Drizzle queries expected the declared `sourceType` and `track` columns. This caused `career.overview` source reads to return HTTP 500 for affected signed-in sessions. The repair preserved all existing rows and non-destructively renamed the `jobSources` columns, then reconciled the journalled migration for the `jobListings.track` column and related index. Drizzle now explicitly maps each enum field to the physical names declared by the schema.
+
+The repaired database retains the four active verified public sources and the active owner schedule. A fresh browser request to `career.overview` returned HTTP 200 without a legacy-column query error. The visible preview has zero sources because it is signed in as a separate admin account (Dilip Singh); the configured monitor, profile, sources, and schedule remain owned by Balaji Rajput (user 180001), and no cross-user data move was made. Owner-session browser verification remains pending legitimate access to that account.
+
+The regression suite now contains an explicit physical-column mapping assertion and passes **59/59 tests across 16 files**. TypeScript, the production build, and the critical/high audit gate also pass after the repair; the already-documented dev-only moderate Drizzle/esbuild advisory remains unchanged.

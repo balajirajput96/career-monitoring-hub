@@ -29,6 +29,13 @@
       "when": 1786542762483,
       "tag": "0003_far_the_twelve",
       "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "5",
+      "when": 1786994606263,
+      "tag": "0004_dark_shatterstar",
+      "breakpoints": true
     }
   ]
 }
