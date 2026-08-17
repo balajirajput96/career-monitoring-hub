@@ -107,3 +107,7 @@ Persisted `workflowRuns` and `dailyReports` exist for every successful callback.
 A controlled temporary Hindi-language validation attempt exposed delayed Heartbeat schedule-update propagation: no Hindi callback was dispatched in the requested validation windows. The only delayed callback at 14:45 UTC persisted an English report, because the schedule had already been restored to English before the delayed execution. No external action occurred in any validation attempt.
 
 To remove stale metadata safely, the old task `b7SZZTySnbbX7ewHx3CJwV` was retired only after a replacement task was created and its UID was atomically persisted on the owner schedule. The active task is now `3HB9Jfaqhug4ADmtvrqCGA` (`career-monitor-restored-180001`), enabled with `0 30 3 * * *`, callback `/api/scheduled/career-monitor`, and an expected next execution of `2026-08-18T03:30:00Z` (09:00 IST). The platform registry contains exactly one active task. Its first callback and a real persisted Hindi report are still pending verification.
+
+## n8n read-only handoff
+
+`docs/n8n-readonly-gmail-webhook-setup.md` now provides a reproducible owner-run configuration for Gmail Trigger → minimal event transformation → exact-body HMAC signing → Career Hub webhook delivery. The guide cites current n8n documentation, preserves the existing no-send/no-draft/no-auto-apply boundaries, and documents a concrete owner validation checklist. It intentionally requires a legitimate Gmail OAuth credential and a host-protected shared secret before activation.
