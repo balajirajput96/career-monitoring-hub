@@ -73,12 +73,12 @@
 
 - [x] Create a precise owner-run n8n read-only Gmail-to-Career-Hub setup guide, including OAuth redirect URI, event minimization, and HMAC payload signing.
 
-- [ ] Execute and verify one real Hindi-language scheduled callback with a persisted Hindi daily report, then document both English and Hindi live report evidence.
+- [ ] Execute and verify one real Hindi-language scheduled callback with a persisted Hindi daily report, then document both English and Hindi live report evidence. (Blocked: Heartbeat CLI lacks manual trigger; must wait for scheduled execution or owner manual trigger)
 - [x] Repair and re-verify the active Heartbeat task after the temporary validation attempt left a stale next-execution timestamp despite the restored 09:00 IST cron expression.
-- [ ] Verify the first completed callback from replacement task `3HB9Jfaqhug4ADmtvrqCGA` and its persisted run/report records after 09:00 IST on 18 Aug 2026.
+- [ ] Verify the first completed callback from replacement task `3HB9Jfaqhug4ADmtvrqCGA` and its persisted run/report records after 09:00 IST on 18 Aug 2026. (Blocked: Must wait for scheduled execution time)
 
-- [ ] Complete Gmail polling only after the owner authorizes a valid Google OAuth credential in n8n; do not create or store fabricated credentials.
-- [ ] Complete signed webhook delivery only after a legitimate shared secret is configured in both Career Hub and n8n.
+- [ ] Complete Gmail polling only after the owner authorizes a valid Google OAuth credential in n8n; do not create or store fabricated credentials. (Blocked: Owner declined paid Render upgrade required for persistent n8n; using no-cost Apps Script fallback instead)
+- [ ] Complete signed webhook delivery only after a legitimate shared secret is configured in both Career Hub and n8n. (Blocked: Owner declined paid Render upgrade required for persistent n8n; using no-cost Apps Script fallback instead)
 
 - [x] Add a dashboard form to manually import a recruiter email with sender, subject, received time, message ID, optional thread ID, and snippet.
 - [x] Display imported recruiter email events in the dashboard and allow only reviewed or ignored status changes.
@@ -99,3 +99,8 @@
 - [x] Select the safest viable no-cost option: owner-run Apps Script template or existing manual importer, without fabricating OAuth credentials or bypassing provider authentication.
 - [x] Document that no paid Render plan, persistent disk, card, or billing change was made.
 - [x] Repair and re-verify the transient dev-server module-resolution state; current server starts cleanly and TypeScript plus 58 Vitest tests pass.
+
+- [x] Audit all project scripts, TypeScript, Vitest, production build, and runtime logs; fix every reproducible code-level failure.
+- [x] Inspect the GitHub repository remote, current branch, upstream divergence, and working tree before any rebase or push.
+- [x] Create a safe local backup branch and perform a rebase only when a compatible upstream branch exists; resolve conflicts with tests.
+- [ ] Commit and push only the validated Career Monitoring Hub code to the authenticated GitHub repository after branch safety is confirmed.
