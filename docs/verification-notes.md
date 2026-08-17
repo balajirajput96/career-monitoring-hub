@@ -123,3 +123,8 @@ After rollback and restart, the latest `devserver.log` entries show normal OAuth
 ## Replacement Heartbeat pre-execution check — 17 Aug 2026 18:39 UTC
 
 The platform registry currently contains exactly one enabled replacement task: `3HB9Jfaqhug4ADmtvrqCGA`, callback `/api/scheduled/career-monitor`, cron `0 30 3 * * *`, and next execution `2026-08-18T03:30:00Z`. The task has no runs yet because the current UTC time is `2026-08-17T18:39:18Z`; this is before the scheduled execution. The stale metadata repair is therefore complete, while first-callback and persisted Hindi-report verification remain open.
+
+
+## Post-callback agent verification scheduling — 17 Aug 2026
+
+The current-task schedule registry is empty. A one-time verification schedule was not created because the schedule service returned `failed_precondition: project not deployed yet`, despite the WebDev project having a published checkpoint. No retry was issued against the same failing operation, and no existing Heartbeat task or production schedule was changed. The replacement Heartbeat remains the sole production verifier; its first callback must be checked in a later session after `2026-08-18T03:30:00Z`.
