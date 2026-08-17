@@ -111,3 +111,7 @@ To remove stale metadata safely, the old task `b7SZZTySnbbX7ewHx3CJwV` was retir
 ## n8n read-only handoff
 
 `docs/n8n-readonly-gmail-webhook-setup.md` now provides a reproducible owner-run configuration for Gmail Trigger → minimal event transformation → exact-body HMAC signing → Career Hub webhook delivery. The guide cites current n8n documentation, preserves the existing no-send/no-draft/no-auto-apply boundaries, and documents a concrete owner validation checklist. It intentionally requires a legitimate Gmail OAuth credential and a host-protected shared secret before activation.
+
+### n8n access diagnostics — 17 Aug 2026
+
+The enabled n8n MCP connector currently fails to initialize because its configured transport returns a legacy-SSE-compatible 4xx response. The injected `N8N_INSTANCE_URL` resolves to a cloud MCP endpoint rather than the public Render workspace, so it cannot be used as the Render instance REST base URL. The documented workspace URL, `https://n8n-latest-xddq.onrender.com/home/workflows`, reached Render's application-loading page at 14:57 UTC and began waking the service. By 14:58 UTC, Render had allocated resources, injected environment variables, and reported that the instance was nearly live, but the n8n application itself had not yet responded; a further post-startup recheck remained on the same loading page. No n8n workflow, credential, secret, or email state was changed during this diagnostic.
