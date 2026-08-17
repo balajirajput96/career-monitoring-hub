@@ -104,3 +104,5 @@
 - [x] Inspect the GitHub repository remote, current branch, upstream divergence, and working tree before any rebase or push.
 - [x] Create a safe local backup branch and perform a rebase only when a compatible upstream branch exists; resolve conflicts with tests.
 - [x] Commit and push only the validated Career Monitoring Hub code to the authenticated GitHub repository after branch safety is confirmed.
+- [x] Remediate actionable dependency security findings and restore compatibility across the supported Vite/Vitest toolchain.
+- [x] Eliminate or document the remaining non-runtime transitive dependency advisory after verifying package-manager constraints and build behavior.

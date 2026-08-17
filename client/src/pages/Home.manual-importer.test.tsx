@@ -11,19 +11,31 @@ const ingestMutate = vi.fn();
 const reviewMutate = vi.fn();
 const emptyMutation = { mutate: vi.fn(), isPending: false };
 
-vi.mock("@/components/DashboardLayout", () => ({ default: ({ children }: { children: React.ReactNode }) => <main>{children}</main> }));
+vi.mock("@/components/DashboardLayout", () => ({
+  default: ({ children }: { children: React.ReactNode }) => React.createElement("main", null, children),
+}));
 vi.mock("sonner", () => ({ toast: { success: vi.fn(), error: vi.fn() } }));
-vi.mock("@/components/ui/button", () => ({ Button: ({ children, ...props }: React.ButtonHTMLAttributes<HTMLButtonElement>) => <button {...props}>{children}</button> }));
-vi.mock("@/components/ui/input", () => ({ Input: (props: React.InputHTMLAttributes<HTMLInputElement>) => <input {...props} /> }));
-vi.mock("@/components/ui/textarea", () => ({ Textarea: (props: React.TextareaHTMLAttributes<HTMLTextAreaElement>) => <textarea {...props} /> }));
-vi.mock("@/components/ui/label", () => ({ Label: ({ children, ...props }: React.LabelHTMLAttributes<HTMLLabelElement>) => <label {...props}>{children}</label> }));
-vi.mock("@/components/ui/badge", () => ({ Badge: ({ children }: { children: React.ReactNode }) => <span>{children}</span> }));
+vi.mock("@/components/ui/button", () => ({
+  Button: ({ children, ...props }: React.ButtonHTMLAttributes<HTMLButtonElement>) => React.createElement("button", props, children),
+}));
+vi.mock("@/components/ui/input", () => ({
+  Input: (props: React.InputHTMLAttributes<HTMLInputElement>) => React.createElement("input", props),
+}));
+vi.mock("@/components/ui/textarea", () => ({
+  Textarea: (props: React.TextareaHTMLAttributes<HTMLTextAreaElement>) => React.createElement("textarea", props),
+}));
+vi.mock("@/components/ui/label", () => ({
+  Label: ({ children, ...props }: React.LabelHTMLAttributes<HTMLLabelElement>) => React.createElement("label", props, children),
+}));
+vi.mock("@/components/ui/badge", () => ({
+  Badge: ({ children }: { children: React.ReactNode }) => React.createElement("span", null, children),
+}));
 vi.mock("@/components/ui/select", () => ({
-  Select: ({ children }: { children: React.ReactNode }) => <div>{children}</div>,
-  SelectContent: ({ children }: { children: React.ReactNode }) => <div>{children}</div>,
-  SelectItem: ({ children, disabled }: { children: React.ReactNode; disabled?: boolean }) => <button type="button" disabled={disabled}>{children}</button>,
-  SelectTrigger: ({ children }: { children: React.ReactNode }) => <div>{children}</div>,
-  SelectValue: () => <span />,
+  Select: ({ children }: { children: React.ReactNode }) => React.createElement("div", null, children),
+  SelectContent: ({ children }: { children: React.ReactNode }) => React.createElement("div", null, children),
+  SelectItem: ({ children, disabled }: { children: React.ReactNode; disabled?: boolean }) => React.createElement("button", { type: "button", disabled }, children),
+  SelectTrigger: ({ children }: { children: React.ReactNode }) => React.createElement("div", null, children),
+  SelectValue: () => React.createElement("span"),
 }));
 
 const overviewData = {
@@ -59,7 +71,7 @@ afterEach(cleanup);
 describe("Home manual recruiter-email importer", () => {
   it("submits normalized form data to contacts.ingestEmailEvents", async () => {
     const user = userEvent.setup();
-    render(<Home />);
+    render(React.createElement(Home));
     await user.type(screen.getByLabelText(/Stable message ID/i), "  provider-message-81 ");
     await user.type(screen.getByLabelText(/Sender email/i), " recruiter@example.com ");
     await user.type(screen.getByLabelText(/^Subject/i), "  QA interview update ");
@@ -73,7 +85,7 @@ describe("Home manual recruiter-email importer", () => {
   });
 
   it("renders unreviewed as disabled while reviewed and ignored are actionable choices", () => {
-    render(<Home />);
+    render(React.createElement(Home));
     const unreviewed = screen.getByRole("button", { name: "unreviewed" });
     expect((unreviewed as HTMLButtonElement).disabled).toBe(true);
     expect((screen.getByRole("button", { name: "reviewed" }) as HTMLButtonElement).disabled).toBe(false);
