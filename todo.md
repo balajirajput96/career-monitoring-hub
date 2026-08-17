@@ -67,7 +67,8 @@
 - [ ] Verify the n8n sync end to end with deduplicated recruiter events, thread/contact matching, and manual-review-only state.
 - [x] Fix the n8n activation-link localhost redirect by using the public Render usage route and verify Community Edition activation.
 
-- [ ] Add a signed server-to-server recruiter-email webhook contract so n8n can ingest events without a browser session or credential bypass.
+- [x] Add a signed server-to-server recruiter-email webhook contract so n8n can ingest events without a browser session or credential bypass.
+- [x] Return a structured JSON 500 response when owner lookup or recruiter-event persistence fails, and cover the fail-closed webhook path with regression tests.
 - [ ] Configure and test the webhook shared secret for the Career Hub deployment and n8n workflow.
 
 - [ ] Complete Gmail polling only after the owner authorizes a valid Google OAuth credential in n8n; do not create or store fabricated credentials.
@@ -82,3 +83,7 @@
 - [x] Add a dashboard-level importer test for form serialization/mutation payload construction and reviewed/ignored-only options.
 - [x] Add a rendered Home dashboard importer test that submits normalized email data to the contacts.ingestEmailEvents mutation.
 - [x] Add a rendered Home review-control test that exposes only reviewed and ignored as actionable status options.
+
+- [x] Verify the current connected-service inventory and GitHub browser sign-in status; request secure owner takeover only if GitHub authentication is unavailable.
+- [x] Open GitHub in the browser and verify the web session; request owner takeover only if browser authentication is unavailable.
+- [x] Document the verified connected-service inventory and GitHub browser-session result in project verification notes.

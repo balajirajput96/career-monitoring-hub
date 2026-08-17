@@ -81,3 +81,17 @@ The selected n8n Gmail Trigger approach therefore remains a read-only polling in
 - `runScheduledCareerWorkflow` now concurrently fetches validated public feeds with an 8-second timeout, processes at most 12 jobs per source and 24 jobs per run, and writes deterministic bilingual reports without inline LLM or owner-notification calls.
 - A mocked scheduled-execution test verifies three sources, the 24-job global cap, a persisted Hindi report, source update records, and zero inline LLM/notification calls. The full suite passes **52/52** tests and `pnpm exec tsc --noEmit` passes.
 - The timeout-safe code still requires publication and a subsequent Heartbeat callback completion before the live schedule verification item can be closed.
+
+## Connected-service and GitHub access verification — 17 Aug 2026
+
+- The GitHub connector is enabled. `gh auth status` verified an active HTTPS CLI token for `balajirajput96`; no repository, issue, pull request, or account setting was changed during the check.
+- Gmail, Google Workspace, n8n, and n8n API connectors are enabled. The Gmail connector has `balajirajput968@gmail.com` listed as a known account, but no Gmail action is authorized or configured in the deployed Career Hub. Google Workspace lists two known accounts, with the `balajirajput968@gmail.com` workspace account agent-authorized.
+- Browser verification initially found GitHub signed out. GitHub temporarily returned its “Unicorn / No server is currently available” page on the login route; retrying opened the normal sign-in form. The owner was offered secure browser takeover for password and 2FA entry. Browser login remains optional because the authenticated CLI integration is sufficient for project Git operations.
+
+## Signed recruiter-email webhook contract — 17 Aug 2026
+
+The deployed Career Hub now exposes `POST /api/integrations/n8n/recruiter-email` for an independently authorized, read-only n8n transport. The endpoint accepts raw JSON only and requires the following headers: `X-Career-Timestamp` (Unix milliseconds) and `X-Career-Signature` (`sha256=<hex>` accepted). The signature is an HMAC-SHA256 of the exact string `${timestamp}.${rawJsonBody}` using `RECRUITER_EMAIL_WEBHOOK_SECRET`.
+
+Requests fail closed when the secret is absent, the signature is missing or invalid, the request is older than five minutes, JSON/schema validation fails, or the configured owner cannot be resolved. A validated request may contain up to 100 recruiter events; it has no client-supplied user identifier. The handler always resolves `OWNER_OPEN_ID` server-side, then reuses the existing event-ingestion logic for sender normalization, message-ID deduplication, thread/contact reconciliation, and `unreviewed` status. It has no send, draft, label, delete, application-submit, or message-submit capability.
+
+`pnpm exec tsc --noEmit` passed and the full Vitest suite passed with **58/58 tests across 16 files**, including six webhook-specific tests for a valid signed event, invalid signature, replay protection, malformed sender rejection, missing-secret fail-closed behavior, and a structured JSON 500 response for owner/database failures. The n8n workflow and live delivery remain intentionally blocked until a legitimate shared secret is present in both services and the mailbox owner completes Google OAuth for a read-only Gmail credential. The [n8n Gmail Trigger documentation](https://docs.n8n.io/integrations/builtin/trigger-nodes/n8n-nodes-base.gmailtrigger/) confirms this trigger depends on an authorized Gmail credential.

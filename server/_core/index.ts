@@ -9,6 +9,7 @@ import { appRouter } from "../routers";
 import { createContext } from "./context";
 import { serveStatic, setupVite } from "./vite";
 import { careerMonitorHandler } from "../scheduledCareer";
+import { recruiterEmailWebhookHandler } from "../recruiterEmailWebhook";
 
 function isPortAvailable(port: number): Promise<boolean> {
   return new Promise(resolve => {
@@ -32,6 +33,9 @@ async function findAvailablePort(startPort: number = 3000): Promise<number> {
 async function startServer() {
   const app = express();
   const server = createServer(app);
+  // This route must receive the unparsed bytes so the HMAC covers exactly the
+  // body sent by the authorized external transport.
+  app.post("/api/integrations/n8n/recruiter-email", express.raw({ type: "application/json", limit: "1mb" }), recruiterEmailWebhookHandler);
   // Configure body parser with larger size limit for file uploads
   app.use(express.json({ limit: "50mb" }));
   app.use(express.urlencoded({ limit: "50mb", extended: true }));
