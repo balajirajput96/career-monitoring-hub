@@ -106,4 +106,4 @@
 - [x] Commit and push only the validated Career Monitoring Hub code to the authenticated GitHub repository after branch safety is confirmed.
 - [x] Remediate actionable dependency security findings and restore compatibility across the supported Vite/Vitest toolchain.
 - [x] Eliminate or document the remaining non-runtime transitive dependency advisory after verifying package-manager constraints and build behavior.
-- [x] Add a GitHub Actions workflow that runs frozen installation, TypeScript, tests, production build, and high/critical audit gating on pushes and pull requests.
+- [ ] Add a GitHub Actions workflow that runs frozen installation, TypeScript, tests, production build, and high/critical audit gating on pushes and pull requests.
