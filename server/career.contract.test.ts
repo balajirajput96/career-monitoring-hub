@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
-import { jobListings, jobSources, workflowRuns } from "../drizzle/schema";
+import { dailyReports, jobListings, jobSources, workflowRuns } from "../drizzle/schema";
 import { buildApprovalNotice, extractSessionToken, getScheduleMutationPlan, isScheduleAlreadyActive, mapScheduleMutationError, profileInputSchema, sourceInputSchema, updateLinkedSchedule } from "./routers/career";
-import { approvalIsReviewOnly, buildCoverNotePrompt, resolveReportLanguage, shouldRecordDailyReport } from "./careerWorkflow";
+import { approvalIsReviewOnly, buildBilingualDailySummary, buildCoverNotePrompt, resolveReportLanguage, shouldRecordDailyReport } from "./careerWorkflow";
 import { buildResumeContext, isDuplicateApplicationSubmission } from "./careerStore";
 
 describe("workflow safety contracts", () => {
@@ -134,6 +134,19 @@ describe("bilingual report language contract", () => {
     expect(resolveReportLanguage("hi", "en")).toBe("hi");
     expect(resolveReportLanguage("en", "hi")).toBe("hi");
     expect(resolveReportLanguage("en", "en")).toBe("en");
+  });
+
+  it("builds deterministic English and Hindi daily summaries without changing the approval gate", () => {
+    const summary = buildBilingualDailySummary({ newJobs: 2, highPriority: 1, sourceErrors: 0, sourcesChecked: 4 }, []);
+    expect(summary.en).toContain("2 new opportunities");
+    expect(summary.en).toContain("Manual approval remains required");
+    expect(summary.hi).toContain("2 नए अवसर");
+    expect(summary.hi).toContain("manual approval आवश्यक है");
+  });
+
+  it("maps both persisted bilingual content columns to the deployed dailyReports contract", () => {
+    expect(dailyReports.contentEnglish.name).toBe("contentEnglish");
+    expect(dailyReports.contentHindi.name).toBe("contentHindi");
   });
 });
 

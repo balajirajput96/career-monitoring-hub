@@ -112,7 +112,17 @@ describe("scheduled discovery execution", () => {
     expect(fetch).toHaveBeenCalledTimes(3);
     expect(invokeLLM).not.toHaveBeenCalled();
     expect(notifyOwner).not.toHaveBeenCalled();
-    expect(recordDailyReport).toHaveBeenCalledWith(7, 44, "hi", expect.stringContaining("manual approval आवश्यक है"), expect.objectContaining({ newJobs: 24 }));
+    expect(recordDailyReport).toHaveBeenCalledWith(
+      7,
+      44,
+      "hi",
+      expect.stringContaining("manual approval आवश्यक है"),
+      expect.objectContaining({ newJobs: 24 }),
+      expect.objectContaining({
+        en: expect.stringContaining("Manual approval remains required"),
+        hi: expect.stringContaining("manual approval आवश्यक है"),
+      })
+    );
     expect(markScheduleRun).toHaveBeenCalledWith(1);
     expect(updateSourceResult).toHaveBeenCalledTimes(3);
   });

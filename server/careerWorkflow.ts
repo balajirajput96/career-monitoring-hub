@@ -180,6 +180,13 @@ export function buildDeterministicDailySummary(language: "en" | "hi", stats: Rec
     : `Daily job run completed. ${stats.newJobs} new opportunities were found, ${stats.highPriority} are high-priority matches, and ${stats.sourceErrors} source errors were recorded. Manual approval remains required for every application and message.${sourceNote}`;
 }
 
+export function buildBilingualDailySummary(stats: Record<string, number>, blockers: string[]) {
+  return {
+    en: buildDeterministicDailySummary("en", stats, blockers),
+    hi: buildDeterministicDailySummary("hi", stats, blockers),
+  };
+}
+
 export function shouldRecordDailyReport(status: "completed" | "completed_with_warnings" | "skipped" | "failed") {
   return status === "completed" || status === "completed_with_warnings" || status === "skipped";
 }
@@ -201,11 +208,13 @@ export async function runScheduledCareerWorkflow(scheduleId: number) {
   const run = await createWorkflowRun(schedule.id, schedule.userId);
   if (!profile) {
     const stats = { newJobs: 0, highPriority: 0, sourceErrors: 0, sourcesChecked: 0 };
-    const summary = effectiveLanguage === "hi"
-      ? "रन छोड़ा गया क्योंकि आपका career profile अभी पूरा नहीं है। पहले skills, experience और preferences सहेजें।"
-      : "Run skipped because your career profile is incomplete. Save skills, experience, and preferences first.";
+    const summaries = {
+      en: "Run skipped because your career profile is incomplete. Save skills, experience, and preferences first.",
+      hi: "रन छोड़ा गया क्योंकि आपका career profile अभी पूरा नहीं है। पहले skills, experience और preferences सहेजें।",
+    };
+    const summary = summaries[effectiveLanguage];
     await completeWorkflowRun(run.id, { status: "skipped", statistics: stats, summary, error: "Missing candidate profile" });
-    await recordDailyReport(schedule.userId, run.id, effectiveLanguage, summary, stats);
+    await recordDailyReport(schedule.userId, run.id, effectiveLanguage, summary, stats, summaries);
     return { ok: true, skipped: "missing-profile" };
   }
 
@@ -294,10 +303,11 @@ export async function runScheduledCareerWorkflow(scheduleId: number) {
       }
     }
 
-    const summary = buildDeterministicDailySummary(effectiveLanguage, stats, blockers);
+    const summaries = buildBilingualDailySummary(stats, blockers);
+    const summary = summaries[effectiveLanguage];
     const status = stats.sourceErrors > 0 ? "completed_with_warnings" : "completed";
     await completeWorkflowRun(run.id, { status, statistics: stats, summary, error: blockers.length ? blockers.join(" | ") : null });
-    if (shouldRecordDailyReport(status)) await recordDailyReport(schedule.userId, run.id, effectiveLanguage, summary, stats);
+    if (shouldRecordDailyReport(status)) await recordDailyReport(schedule.userId, run.id, effectiveLanguage, summary, stats, summaries);
     await markScheduleRun(schedule.id);
     return { ok: true, stats, status };
   } catch (error) {

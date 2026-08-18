@@ -312,6 +312,8 @@ export const dailyReports = mysqlTable(
     reportDate: varchar("reportDate", { length: 10 }).notNull(),
     language: varchar("language", { length: 5 }).notNull().default("en"),
     content: text("content").notNull(),
+    contentEnglish: text("contentEnglish"),
+    contentHindi: text("contentHindi"),
     statistics: json("statistics").$type<Record<string, number>>().notNull(),
     createdAt: timestamp("createdAt").defaultNow().notNull(),
   },

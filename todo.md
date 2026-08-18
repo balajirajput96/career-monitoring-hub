@@ -123,3 +123,4 @@
 - [x] Record final GitHub sync evidence, including latest commit SHA and successful hosted CI run, before closing sync-dependent work.
 - [x] Perform a fresh pre-rebase audit of GitHub CLI authentication, remotes, upstream divergence, working tree, local validation gates, and hosted CI; fix any newly reproducible failure before synchronization.
 - [x] Rebase only when a compatible upstream contains new commits; first preserve a safety branch, resolve any conflicts through code and tests, and do not rewrite remote history.
+- [x] Persist both English and Hindi deterministic daily-report content for every completed scheduled run, while retaining a clear primary display language and the existing manual-approval safeguard. Migration `0005_messy_blonde_phantom.sql` is applied; live review-only run `270001` persisted both contents.

@@ -182,3 +182,11 @@ The callback persisted workflow run `240001` and its linked daily report `240001
 Post-callback validation completed successfully: `pnpm run check`, the full **59/59** Vitest suite, and the production build all passed. The high/critical audit gate also passed; the only reported advisory remains the documented development-only moderate Drizzle Kit legacy esbuild-loader dependency.
 
 The callback-evidence commit [`76e16f0`](https://github.com/balajirajput96/career-monitoring-hub/commit/76e16f00b8228ac612f69bf5a402246ccb086050) was accepted by hosted CI run [`32096421828`](https://github.com/balajirajput96/career-monitoring-hub/actions/runs/32096421828), which completed successfully with the locked-install, TypeScript, test, production-build, and high/critical-audit stages.
+
+## Always-bilingual daily reports — 18 Aug 2026
+
+Migration `0005_messy_blonde_phantom.sql` added nullable `contentEnglish` and `contentHindi` fields to the persisted `dailyReports` contract without modifying existing report rows. Every newly completed or skipped scheduled workflow now constructs both deterministic summaries, stores the configured primary language in the existing `content` field, and stores both English and Hindi forms alongside it. The dashboard renders both language sections for newly bilingual reports while preserving backward-compatible rendering for earlier single-language reports.
+
+The persisted behavior was verified with bounded review-only workflow run `270001` against the owner’s configured public Greenhouse/Lever feeds. The run completed successfully with four sources checked, zero source errors, and zero new jobs. Daily report `270001` uses English as its configured primary language (188 characters) and also persists Hindi content (158 characters). The verification did not submit an application, send a message, create an email draft, or alter any external account.
+
+The code change passed `pnpm run check`, **61/61** Vitest assertions across 16 files, and a production build. The rendered dashboard was also visually checked; it correctly displays the signed-in session’s data, and therefore the current non-owner browser session continues to show its own empty dashboard rather than Balaji Rajput’s private records.

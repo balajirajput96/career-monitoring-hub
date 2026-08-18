@@ -397,11 +397,21 @@ export async function recordDailyReport(
   workflowRunId: number,
   language: string,
   content: string,
-  statistics: Record<string, number>
+  statistics: Record<string, number>,
+  translations?: { en: string; hi: string }
 ) {
   const db = await requireCareerDb();
   const reportDate = new Date().toISOString().slice(0, 10);
-  await db.insert(dailyReports).values({ userId, workflowRunId, reportDate, language, content, statistics });
+  await db.insert(dailyReports).values({
+    userId,
+    workflowRunId,
+    reportDate,
+    language,
+    content,
+    contentEnglish: translations?.en ?? (language === "en" ? content : null),
+    contentHindi: translations?.hi ?? (language === "hi" ? content : null),
+    statistics,
+  });
 }
 
 export async function markScheduleRun(scheduleId: number) {
