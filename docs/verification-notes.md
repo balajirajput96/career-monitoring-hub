@@ -164,3 +164,9 @@ The subsequent final checklist commit [`12d05f1`](https://github.com/balajirajpu
 ## Read-only inbox event import — 18 Aug 2026
 
 The configured Gmail connector was queried read-only for incoming recruiter correspondence. Two verified inbound replies were persisted for Balaji Rajput (`userId=180001`) as internal, **unreviewed** recruiter-email events: Skant HR's CTC question and Rivpra Formulation's acknowledgement/form request. Each event retains the Gmail message and thread identifiers, has no matched contact, and requires manual **reviewed** or **ignored** action in the dashboard. Outbound applications and the Hetero delivery-failure notice were deliberately excluded to avoid false recruiter contacts. No email was sent, drafted, altered, or deleted.
+
+## Fresh repository audit, safe rebase, and regression validation — 18 Aug 2026
+
+The authenticated GitHub CLI was verified for `balajirajput96`, and the local `main` branch was found one compatible commit behind `github/main`. Before synchronization, a local safety branch, `backup/pre-remediation-audit-20260818`, was created at the previously validated checkpoint commit. The working-tree checklist update was stashed, `git rebase github/main` completed cleanly, and the change was restored without conflict. No remote history was rewritten.
+
+The rebased project passed `pnpm install --frozen-lockfile`, `pnpm run check`, and the full Vitest suite: **59/59 tests across 16 files**. A production build completed successfully, the development runtime returned HTTP `200`, and the high/critical audit gate passed. The audit continues to report the already documented single moderate, development-only Drizzle Kit / deprecated esbuild-loader transitive advisory; no safe supported override replaces that upstream-pinned chain. The branch was at `0 0` divergence with `github/main` immediately before recording this evidence.

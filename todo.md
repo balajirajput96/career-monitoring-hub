@@ -121,3 +121,5 @@
 - [x] Fetch private GitHub main and perform a safe no-op rebase check only if upstream diverges; preserve the existing backup branch and never rewrite remote history. GitHub main had zero upstream-only commits and the rebase was a clean no-op.
 - [x] Push the final local checklist commit(s) to GitHub main and verify upstream parity is `0 0`.
 - [x] Record final GitHub sync evidence, including latest commit SHA and successful hosted CI run, before closing sync-dependent work.
+- [x] Perform a fresh pre-rebase audit of GitHub CLI authentication, remotes, upstream divergence, working tree, local validation gates, and hosted CI; fix any newly reproducible failure before synchronization.
+- [x] Rebase only when a compatible upstream contains new commits; first preserve a safety branch, resolve any conflicts through code and tests, and do not rewrite remote history.
