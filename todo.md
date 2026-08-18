@@ -115,5 +115,7 @@
 - [x] Execute the existing bounded, review-only scheduled discovery workflow once through its internal entrypoint to verify post-migration persistence before the next platform callback; no application, message, or email was submitted.
 - [x] Verify workflowRuns and dailyReports physical-column contract: `workflowRunStatus` is already correctly mapped through the existing Drizzle enum, and a completed run plus English report persisted successfully without a migration.
 - [x] Add regression coverage asserting the workflow run status property maps to the deployed `workflowRunStatus` physical column.
-- [ ] Do not rebase until all reproducible code and scheduled-workflow issues are fixed, validated, and synced to GitHub main.
-- [ ] Fetch private GitHub main and perform a safe no-op rebase check only if upstream diverges; preserve the existing backup branch and never rewrite remote history.
+- [ ] Do not rebase until all reproducible code and scheduled-workflow issues are fixed, validated, and synced to GitHub main. Local checklist completion must still be pushed and verified.
+- [x] Fetch private GitHub main and perform a safe no-op rebase check only if upstream diverges; preserve the existing backup branch and never rewrite remote history. GitHub main had zero upstream-only commits and the rebase was a clean no-op.
+- [ ] Push the final local checklist commit(s) to GitHub main and verify upstream parity is `0 0`.
+- [ ] Record final GitHub sync evidence, including latest commit SHA and successful hosted CI run, before closing sync-dependent work.
