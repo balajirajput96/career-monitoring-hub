@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { jobListings, jobSources } from "../drizzle/schema";
+import { jobListings, jobSources, workflowRuns } from "../drizzle/schema";
 import { buildApprovalNotice, extractSessionToken, getScheduleMutationPlan, isScheduleAlreadyActive, mapScheduleMutationError, profileInputSchema, sourceInputSchema, updateLinkedSchedule } from "./routers/career";
 import { approvalIsReviewOnly, buildCoverNotePrompt, resolveReportLanguage, shouldRecordDailyReport } from "./careerWorkflow";
 import { buildResumeContext, isDuplicateApplicationSubmission } from "./careerStore";
@@ -144,6 +144,7 @@ describe("public job source contract", () => {
     expect(jobSources.sourceType.name).toBe("sourceType");
     expect(jobSources.track.name).toBe("track");
     expect(jobListings.track.name).toBe("track");
+    expect(workflowRuns.status.name).toBe("workflowRunStatus");
   });
 
   it("accepts public Greenhouse JSON endpoints", () => {

@@ -111,3 +111,8 @@
 - [x] Add automated regression coverage for the Drizzle physical-column names used by source and listing track queries.
 - [ ] Reconcile the active schedule and verified source ownership with the signed-in dashboard user so the live UI accurately reflects the configured daily monitor. Ownership audit confirms the monitored data belongs to Balaji Rajput (user 180001), while the sandbox preview session is a separate Dilip Singh admin account; do not move data across users.
 - [ ] Re-verify the live dashboard under Balaji Rajput's intended signed-in session and confirm the active schedule, four verified sources, and profile render without cross-user data changes.
+- [ ] After the next scheduled discovery callback, repeat TypeScript, full Vitest, production build, high/critical audit gate, and hosted GitHub CI before considering any rebase.
+- [x] Execute the existing bounded, review-only scheduled discovery workflow once through its internal entrypoint to verify post-migration persistence before the next platform callback; no application, message, or email was submitted.
+- [x] Verify workflowRuns and dailyReports physical-column contract: `workflowRunStatus` is already correctly mapped through the existing Drizzle enum, and a completed run plus English report persisted successfully without a migration.
+- [x] Add regression coverage asserting the workflow run status property maps to the deployed `workflowRunStatus` physical column.
+- [ ] Do not rebase until all reproducible code and scheduled-workflow issues are fixed, validated, and synced to GitHub main.
