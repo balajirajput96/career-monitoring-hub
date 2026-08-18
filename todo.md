@@ -75,7 +75,7 @@
 
 - [ ] Execute and verify one real Hindi-language scheduled callback with a persisted Hindi daily report, then document both English and Hindi live report evidence. (Blocked: Heartbeat CLI lacks manual trigger; must wait for scheduled execution or owner manual trigger)
 - [x] Repair and re-verify the active Heartbeat task after the temporary validation attempt left a stale next-execution timestamp despite the restored 09:00 IST cron expression.
-- [ ] Verify the first completed callback from replacement task `3HB9Jfaqhug4ADmtvrqCGA` and its persisted run/report records after 09:00 IST on 18 Aug 2026. (Blocked: Must wait for scheduled execution time)
+- [x] Verify the first completed callback from replacement task `3HB9Jfaqhug4ADmtvrqCGA` and its persisted run/report records after 09:00 IST on 18 Aug 2026. The platform-dispatched run `icDnMM6caNMh7yiS92qNb9` completed successfully and persisted workflow run `240001` plus daily report `240001`.
 - [x] Create a one-time post-09:00 IST verification task to inspect the Heartbeat callback and persisted report immediately after the platform run. Task `VRAoDCLjaeUeaW3dFez5PY` is enabled for 03:40 UTC / 09:10 IST and expires at 04:30 UTC.
 
 - [ ] Complete Gmail polling only after the owner authorizes a valid Google OAuth credential in n8n; do not create or store fabricated credentials. (Blocked: Owner declined paid Render upgrade required for persistent n8n; using no-cost Apps Script fallback instead)
