@@ -124,3 +124,4 @@
 - [x] Perform a fresh pre-rebase audit of GitHub CLI authentication, remotes, upstream divergence, working tree, local validation gates, and hosted CI; fix any newly reproducible failure before synchronization.
 - [x] Rebase only when a compatible upstream contains new commits; first preserve a safety branch, resolve any conflicts through code and tests, and do not rewrite remote history.
 - [x] Persist both English and Hindi deterministic daily-report content for every completed scheduled run, while retaining a clear primary display language and the existing manual-approval safeguard. Migration `0005_messy_blonde_phantom.sql` is applied; live review-only run `270001` persisted both contents.
+- [ ] Verify the 19 Aug 2026 platform-scheduled callback persists non-empty English and Hindi report content. One-time read-only verifier `VRAoDCLjaeUeaW3dFez5PY` is active for 09:15 IST and expires at 10:00 IST.
