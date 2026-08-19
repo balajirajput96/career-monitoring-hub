@@ -45,12 +45,12 @@
 - [x] Add an explicit test for pauseSchedule on an existing persisted task, including mocked 403 handling and non-destructive TRPC behavior.
 - [x] Add a direct router-level pauseSchedule test where Heartbeat 403 remains unrecoverable, asserting the intended non-destructive TRPC error and unchanged persisted schedule state.
 
-- [ ] Validate the first scheduled discovery run, including bilingual English/Hindi report generation, threshold behavior, and persisted run results.
+- [x] Validate the first scheduled discovery run, including bilingual English/Hindi report generation, threshold behavior, and persisted run results. Platform callback run `300001` on 19 Aug completed with both persisted fields, two new jobs, zero high-priority matches at the configured threshold, and zero source errors.
 - [x] Make scheduled discovery complete within Heartbeat's execution budget by removing inline retry-prone AI calls and bounding per-run source/job work.
 - [x] Add regression tests proving scheduled discovery uses deterministic report/explanation fallbacks and does not invoke LLM or notification network calls inline.
 - [x] Add a mocked scheduled-workflow execution test proving no inline LLM or owner-notification calls occur.
 - [x] Add a bounded-load scheduled-workflow test covering multiple sources and the explicit per-run processing limit.
-- [ ] Publish the timeout-safe workflow and re-verify a completed Heartbeat callback with a persisted bilingual report.
+- [x] Publish the timeout-safe workflow and re-verify a completed Heartbeat callback with a persisted bilingual report. Task run `SyrmCRR7Cu9rSxQA7uPfWK` succeeded with HTTP 200, non-manual trigger, four sources checked, two new jobs, and zero source errors; it aligns with persisted bilingual workflow run/report `300001`.
 - [x] Add privacy-preserving recruiter-response email ingestion with read-only access, sender/thread matching, deduplication, and manual-review status updates only.
 - [x] Research and add additional legitimate public Greenhouse/Lever sources for Pharmaceutical QA and AI/Python/Automation tracks, with source verification and tests.
 
@@ -124,4 +124,4 @@
 - [x] Perform a fresh pre-rebase audit of GitHub CLI authentication, remotes, upstream divergence, working tree, local validation gates, and hosted CI; fix any newly reproducible failure before synchronization.
 - [x] Rebase only when a compatible upstream contains new commits; first preserve a safety branch, resolve any conflicts through code and tests, and do not rewrite remote history.
 - [x] Persist both English and Hindi deterministic daily-report content for every completed scheduled run, while retaining a clear primary display language and the existing manual-approval safeguard. Migration `0005_messy_blonde_phantom.sql` is applied; live review-only run `270001` persisted both contents.
-- [ ] Verify the 19 Aug 2026 platform-scheduled callback persists non-empty English and Hindi report content. One-time read-only verifier `VRAoDCLjaeUeaW3dFez5PY` is active for 09:15 IST and expires at 10:00 IST.
+- [x] Verify the 19 Aug 2026 platform-scheduled callback persists non-empty English and Hindi report content. Platform workflow run `300001` completed at 09:04 IST with daily report `300001`, English content length 188, Hindi content length 158, and no external action.
