@@ -40,7 +40,7 @@ vi.mock("./careerStore", () => ({
   updateSourceResult,
 }));
 
-import { runScheduledCareerWorkflow, scheduledExecutionPolicy } from "./careerWorkflow";
+import { approvalIsReviewOnly, runScheduledCareerWorkflow, scheduledExecutionPolicy } from "./careerWorkflow";
 
 const schedule = {
   id: 1,
@@ -125,5 +125,17 @@ describe("scheduled discovery execution", () => {
     );
     expect(markScheduleRun).toHaveBeenCalledWith(1);
     expect(updateSourceResult).toHaveBeenCalledTimes(3);
+  });
+
+  it("keeps recurring discovery bounded and review-only", () => {
+    expect(scheduledExecutionPolicy).toEqual({
+      sourceFetchTimeoutMs: 8_000,
+      maxJobsPerSource: 12,
+      maxJobsPerRun: 24,
+      runtimeBudgetMs: 20_000,
+      useInlineAi: false,
+      sendInlineNotifications: false,
+    });
+    expect(approvalIsReviewOnly()).toBe(true);
   });
 });

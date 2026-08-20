@@ -202,3 +202,17 @@ Task-level Heartbeat evidence was subsequently retrieved read-only for `3HB9Jfaq
 After collecting this evidence, the practical validation suite passed again: TypeScript completed without errors, **61/61** Vitest tests across 16 files passed, and the production build completed. The high/critical dependency audit gate passed; its only remaining finding is the documented moderate development-only transitive advisory.
 
 The existing one-time post-callback verifier `VRAoDCLjaeUeaW3dFez5PY` was rescheduled for 19 Aug 2026 at 09:15 IST, after the next 09:00 IST production callback. It will only inspect the Heartbeat log and persisted report fields, confirm non-empty English and Hindi content, and report verified results. It explicitly must not change schedules, send mail, create drafts, submit applications, send messages, or bypass authentication; it expires at 10:00 IST.
+
+## GitHub re-authorization and synchronized CI — 20 Aug 2026
+
+GitHub CLI was re-authorized for `balajirajput96` through the account's approved GitHub Mobile sudo-mode challenge. Before synchronization, the repository was fetched and reviewed: GitHub `main` contained one compatible analytics-loading fix (`d88a4ab`) while the validated local scheduled-callback evidence commit was one commit ahead. A local safety branch, `backup/pre-sync-20260820`, was created, the uncommitted checklist change was stashed, and the evidence commit was rebased cleanly without rewriting remote history. The checklist was then restored unchanged.
+
+The rebased evidence commit `84cf97e4dfe80d6c2ebdcefeb96dcf61b58b9cc4` was pushed to private GitHub `main`. Local validation after the rebase passed TypeScript checking, **61/61** Vitest tests across 16 files, and the production build. The high/critical audit gate passed; the only remaining finding is the already documented moderate development-only upstream advisory. Hosted GitHub Actions CI run [`32411433462`](https://github.com/balajirajput96/career-monitoring-hub/actions/runs/32411433462) completed successfully for the same commit.
+
+## Read-only operations inventory and maintenance boundary — 20 Aug 2026
+
+A read-only inventory confirmed that private GitHub `main` and the local checked-out commit `84cf97e4dfe80d6c2ebdcefeb96dcf61b58b9cc4` were fully synchronized (`0` remote-only and `0` local-only commits), and the active GitHub CLI identity is `balajirajput96`. No authentication token, cookie, private inbox content, recruiter message, or unrelated repository data was retained in the inventory.
+
+Exactly one enabled project-level scheduled task was present: `career-monitor-restored-180001` (`3HB9Jfaqhug4ADmtvrqCGA`). It posts to `/api/scheduled/career-monitor` under the UTC cron expression `0 30 3 * * *`, which is 09:00 IST daily. Its latest recorded execution began at `2026-08-20T03:37:36Z`, and its next scheduled execution is `2026-08-21T03:30:00Z`. The task description explicitly retains public-feed discovery and manual review before every external action.
+
+The durable maintenance runbook is now captured in [`maintenance-runbook.md`](./maintenance-runbook.md). It documents the existing bounded callback envelope, current recovery flow, review-only application/message boundary, code-validation controls, and restriction against high-frequency full-agent polling. Its companion regression assertion verifies the fixed execution limits and confirms that scheduled work remains review-only.
