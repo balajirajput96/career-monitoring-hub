@@ -216,3 +216,9 @@ A read-only inventory confirmed that private GitHub `main` and the local checked
 Exactly one enabled project-level scheduled task was present: `career-monitor-restored-180001` (`3HB9Jfaqhug4ADmtvrqCGA`). It posts to `/api/scheduled/career-monitor` under the UTC cron expression `0 30 3 * * *`, which is 09:00 IST daily. Its latest recorded execution began at `2026-08-20T03:37:36Z`, and its next scheduled execution is `2026-08-21T03:30:00Z`. The task description explicitly retains public-feed discovery and manual review before every external action.
 
 The durable maintenance runbook is now captured in [`maintenance-runbook.md`](./maintenance-runbook.md). It documents the existing bounded callback envelope, current recovery flow, review-only application/message boundary, code-validation controls, and restriction against high-frequency full-agent polling. Its companion regression assertion verifies the fixed execution limits and confirms that scheduled work remains review-only.
+
+## Published dashboard account-scope check — 21 Aug 2026
+
+The published dashboard was opened through the available Manus session for **balaji dilip** (`balajidilip930@gmail.com`) and inspected read-only. This account displays the verified profile facts (Diploma in Biotechnology and two years of Quality Officer / pharmaceutical QA experience) but has **0 active sources**, an inactive default schedule, no reports, and no workflow history. This does not match the separately persisted monitored data previously verified for Balaji Rajput's owner-scoped record (including four sources and the enabled Heartbeat task).
+
+No source, schedule, profile, report, application, or user ownership field was changed. The live owner-dashboard reconciliation remains blocked until the exact account that owns the persisted Career Hub data is selected in Manus OAuth; it must not be resolved by copying or moving data between accounts.
