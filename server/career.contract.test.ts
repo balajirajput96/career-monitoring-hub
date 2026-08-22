@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { dailyReports, jobListings, jobSources, workflowRuns } from "../drizzle/schema";
+import { applications, approvalRequests, dailyReports, jobListings, jobSources, workflowRuns } from "../drizzle/schema";
 import { buildApprovalNotice, extractSessionToken, getScheduleMutationPlan, isScheduleAlreadyActive, mapScheduleMutationError, profileInputSchema, sourceInputSchema, updateLinkedSchedule } from "./routers/career";
 import { approvalIsReviewOnly, buildBilingualDailySummary, buildCoverNotePrompt, resolveReportLanguage, shouldRecordDailyReport } from "./careerWorkflow";
 import { buildResumeContext, isDuplicateApplicationSubmission } from "./careerStore";
@@ -158,6 +158,12 @@ describe("public job source contract", () => {
     expect(jobSources.track.name).toBe("track");
     expect(jobListings.track.name).toBe("track");
     expect(workflowRuns.status.name).toBe("workflowRunStatus");
+  });
+
+  it("maps review-gated application and approval states to their deployed physical column names", () => {
+    expect(applications.status.name).toBe("applicationStatus");
+    expect(approvalRequests.actionType.name).toBe("approvalAction");
+    expect(approvalRequests.status.name).toBe("approvalStatus");
   });
 
   it("accepts public Greenhouse JSON endpoints", () => {

@@ -222,3 +222,23 @@ The durable maintenance runbook is now captured in [`maintenance-runbook.md`](./
 The published dashboard was opened through the available Manus session for **balaji dilip** (`balajidilip930@gmail.com`) and inspected read-only. This account displays the verified profile facts (Diploma in Biotechnology and two years of Quality Officer / pharmaceutical QA experience) but has **0 active sources**, an inactive default schedule, no reports, and no workflow history. This does not match the separately persisted monitored data previously verified for Balaji Rajput's owner-scoped record (including four sources and the enabled Heartbeat task).
 
 No source, schedule, profile, report, application, or user ownership field was changed. The live owner-dashboard reconciliation remains blocked until the exact account that owns the persisted Career Hub data is selected in Manus OAuth; it must not be resolved by copying or moving data between accounts.
+
+### Minimal database ownership confirmation
+
+A read-only database audit then confirmed the separation. **Balaji Rajput** (user `180001`, `balajirajput968@gmail.com`) owns a candidate profile, **four active public sources**, and the enabled daily task `3HB9Jfaqhug4ADmtvrqCGA`. The current published-dashboard session, **balaji dilip** (user `3540001`, `balajidilip930@gmail.com`), has a profile but zero active sources and no schedule. The separate Dilip Singh administrator account likewise has no active schedule or sources. This confirmation is recorded only to target the correct owner session; it is not authorization to merge, transfer, or duplicate account-scoped data.
+
+The separate `balaji dilip` session was signed out at the owner's direction. The Career Hub then opened the normal Manus OAuth authorization URL, but the sandbox browser remained on a blank loading state rather than rendering an email field. No owner email, password, OTP, or other credential was entered. Completing the exact-owner dashboard verification now requires the owner to take over the already-open Manus login page and sign in as `balajirajput968@gmail.com`.
+
+### Owner role reconciliation
+
+At the owner's explicit request, the uniquely verified Balaji Rajput record (user `180001`, `balajirajput968@gmail.com`) was promoted from `user` to `admin`. The database read-back confirmed the exact intended record and new role. No schedule, job source, listing, report, application, recruiter contact, email event, approval request, or other owner-scoped data was updated, copied, reassigned, or deleted.
+
+### Post-promotion data verification
+
+A second read-only aggregate query verified the promoted record retains an enabled `0 30 3 * * *` schedule in `Asia/Kolkata`, four active public sources, and four persisted reports with both English and Hindi content. It also reported zero application rows in `applied` state and zero approval requests in `executed` state. The schedule code retains a fixed public Greenhouse/Lever-only, time-bounded discovery envelope and stores opportunities for review; it contains no scheduled application or message executor.
+
+The browser still displayed the published sign-in landing page after the owner-login handoff, so the owner-specific dashboard presentation itself has not been verified in a browser session. No data-changing workaround has been attempted. The remaining step is to complete Manus OAuth for `balajirajput968@gmail.com` in the open browser page, then reopen the dashboard and compare it against the already verified database state.
+
+### Regression and build validation — 22 Aug 2026
+
+The status-column contract test now explicitly asserts the persisted `applicationStatus`, `approvalAction`, and `approvalStatus` mappings used by the review-first application flow. The complete validation gate passed TypeScript checking, **63/63** Vitest tests across 16 files, and the production build. The dependency audit reported no high or critical findings; the known moderate development-only Drizzle/esbuild transitive advisory remains unchanged. The production bundle emitted a chunk-size recommendation only, not a build failure.
