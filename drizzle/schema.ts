@@ -83,6 +83,19 @@ export const workflowRunStatusEnum = mysqlEnum("workflowRunStatus", [
   "failed",
   "skipped",
 ]);
+export const reelProductionStatusEnum = mysqlEnum("productionStatus", [
+  "queued",
+  "researching",
+  "producing",
+  "qc_passed",
+  "delivered",
+  "blocked",
+]);
+export const reelEvidenceStatusEnum = mysqlEnum("evidenceStatus", [
+  "unverified",
+  "verified",
+  "needs_review",
+]);
 
 export const candidateProfiles = mysqlTable(
   "candidateProfiles",
@@ -318,4 +331,78 @@ export const dailyReports = mysqlTable(
     createdAt: timestamp("createdAt").defaultNow().notNull(),
   },
   table => [index("dailyReports_user_date_idx").on(table.userId, table.reportDate)]
+);
+
+/**
+ * Owner-scoped configuration for a resumable Hindi research-reel pipeline.
+ * Drive remains the completion source of truth; this table stores only the
+ * verified checkpoint and never video bytes or external credentials.
+ */
+export const reelProductionSettings = mysqlTable(
+  "reelProductionSettings",
+  {
+    id: int("id").autoincrement().primaryKey(),
+    userId: int("userId").notNull().unique(),
+    driveRootFolderId: varchar("driveRootFolderId", { length: 128 }),
+    activeBatchNumber: int("activeBatchNumber").notNull().default(1),
+    nextReelNumber: int("nextReelNumber").notNull().default(1),
+    cronExpression: varchar("cronExpression", { length: 64 }).notNull().default("0 0 4 * * *"),
+    timezone: varchar("timezone", { length: 64 }).notNull().default("Asia/Kolkata"),
+    isEnabled: boolean("isEnabled").notNull().default(false),
+    lastRunAt: timestamp("lastRunAt"),
+    lastDeliveryVerifiedAt: timestamp("lastDeliveryVerifiedAt"),
+    lastError: text("lastError"),
+    createdAt: timestamp("createdAt").defaultNow().notNull(),
+    updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+  },
+  table => [index("reelProductionSettings_enabled_idx").on(table.isEnabled)]
+);
+
+/** A non-duplicating production ledger for the user’s planned and delivered reels. */
+export const reelProductionItems = mysqlTable(
+  "reelProductionItems",
+  {
+    id: int("id").autoincrement().primaryKey(),
+    userId: int("userId").notNull(),
+    reelNumber: int("reelNumber").notNull(),
+    batchNumber: int("batchNumber").notNull(),
+    title: varchar("title", { length: 300 }).notNull(),
+    category: varchar("category", { length: 120 }).notNull(),
+    topicKey: varchar("topicKey", { length: 255 }).notNull(),
+    claimSlug: varchar("claimSlug", { length: 255 }),
+    productionStatus: reelProductionStatusEnum.notNull().default("queued"),
+    evidenceStatus: reelEvidenceStatusEnum.notNull().default("unverified"),
+    driveFolderId: varchar("driveFolderId", { length: 128 }),
+    driveVideoFileId: varchar("driveVideoFileId", { length: 128 }),
+    deliveryVerified: boolean("deliveryVerified").notNull().default(false),
+    sourceMetadata: json("sourceMetadata").$type<Record<string, unknown>>(),
+    qcMetadata: json("qcMetadata").$type<Record<string, unknown>>(),
+    blocker: text("blocker"),
+    completedAt: timestamp("completedAt"),
+    createdAt: timestamp("createdAt").defaultNow().notNull(),
+    updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+  },
+  table => [
+    uniqueIndex("reelProductionItems_user_number_unique").on(table.userId, table.reelNumber),
+    uniqueIndex("reelProductionItems_user_topic_unique").on(table.userId, table.topicKey),
+    index("reelProductionItems_user_status_idx").on(table.userId, table.productionStatus, table.reelNumber),
+  ]
+);
+
+/** Bounded attempt history; a failed run records a blocker rather than claiming completion. */
+export const reelProductionRuns = mysqlTable(
+  "reelProductionRuns",
+  {
+    id: int("id").autoincrement().primaryKey(),
+    userId: int("userId").notNull(),
+    targetReelNumber: int("targetReelNumber").notNull(),
+    triggerType: varchar("triggerType", { length: 32 }).notNull().default("manual"),
+    status: workflowRunStatusEnum.notNull().default("running"),
+    summary: text("summary"),
+    error: text("error"),
+    startedAt: timestamp("startedAt").defaultNow().notNull(),
+    completedAt: timestamp("completedAt"),
+    createdAt: timestamp("createdAt").defaultNow().notNull(),
+  },
+  table => [index("reelProductionRuns_user_started_idx").on(table.userId, table.startedAt)]
 );
