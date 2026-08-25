@@ -242,3 +242,11 @@ The browser still displayed the published sign-in landing page after the owner-l
 ### Regression and build validation — 22 Aug 2026
 
 The status-column contract test now explicitly asserts the persisted `applicationStatus`, `approvalAction`, and `approvalStatus` mappings used by the review-first application flow. The complete validation gate passed TypeScript checking, **63/63** Vitest tests across 16 files, and the production build. The dependency audit reported no high or critical findings; the known moderate development-only Drizzle/esbuild transitive advisory remains unchanged. The production bundle emitted a chunk-size recommendation only, not a build failure.
+
+## Reel 0006 verified delivery — 25 Aug 2026
+
+Reel 0006, **“नींद और स्मृति: सीख के बाद दिमाग क्या करता है?”**, was technically checked as a 54.966667-second, 720×1280, 30-fps H.264/AAC Hindi reel. Its SHA-256 is `cd2e3efcc2b1987da7859e7a9c37652a72a596fcac392682c34a79193bc7e8cf`. The research brief retains bounded systematic-review and meta-analytic sources; it does not claim guaranteed retention, universal sleep-stage certainty, or medical treatment.
+
+The connected Drive folder `3000_HINDI_RESEARCH_REELS / Batch_001 / Reel_0006` (folder ID `12Ffabn9vwavt4I6cwriNI5psmBJqY2F4`) was listed after upload. It contains the MP4 (file ID `1zvFByApUdC8LnlNr2RdoHpHbl0xpBNAK`), Hindi narration, original background music, caption file, research brief, render script, QC record, metadata, and delivery-verification manifest. The owner-scoped ledger was then transactionally recorded as `delivered` and `verified`, with `deliveryVerified=1`; the queue was advanced from Reel 0006 to Reel 0007 and a completed run record was added. No existing Reel 0001–0005 package was overwritten or regenerated.
+
+The focused Reel Production regression suite passed **2/2** tests. It includes an assertion that the TypeScript run-status property maps to the deployed physical `workflowRunStatus` column; this mapping was already correct through the shared Drizzle enum builder, and no database migration was required.
